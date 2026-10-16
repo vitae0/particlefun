@@ -1,133 +1,131 @@
-# ParticleFun
+# ParticleFun · Field Laboratory
 
-**Parçacık, dalga paketi ve kuantum alanı görünümü arasında simülasyon durmadan geçiş yapılabilen, tarayıcı tabanlı fizik laboratuvarı.**
+A deliberately minimal interface for exploring Standard Model **particle sectors, relativistic kinematics, overlapping single-particle field envelopes, conditional reactions, and conservation laws**.
 
-Bu depo sıfır bağımlılıkla çalışan bir ES module uygulamasıdır. Bütün fiziksel sayılar SI birimleriyle hesaplanır; ekran nanometre (nm), femtosaniye (fs), elektronvolt (eV) ve km/s gösterir. Hesaplar, verilen modelin **gerçek denklemlerine** dayanır. Modelin kendisi kasıtlı olarak sınırlıdır. **Bu program ne eksiksiz atom fiziği ne de kuantum elektrodinamiği (QED) simülatörüdür.**
+**Scientific status:** This is not a first-principles Standard Model quantum-field simulation. That would require nonperturbative QCD, quantum electroweak amplitudes, spin representations and/or event-generator infrastructure far beyond this browser-based model. What is computed is specified below. No arbitrary 2D animation is passed off as exact physics.
 
-## Çalıştırma
+## Run
 
 ```bash
 git clone https://github.com/vitae0/particlefun.git
 cd particlefun
 python3 -m http.server 8080
-# http://localhost:8080
+# Visit http://localhost:8080
 ```
 
-Doğrudan `index.html` dosyasını `file://` protokolüyle açmayın; tarayıcı ES modules için HTTP sunucusu isteyebilir.
+Zero third-party runtime dependencies. ES modules require HTTP, not `file://`. For regression tests: `npm test` (Node.js 20+). GitHub Actions runs syntax and physics tests on commits.
 
-Node.js 20+ ile test:
+## Interface
 
-```bash
-npm test
-```
+- One visualization: **overlapping color-coded quantum-sector packet amplitudes**. No particle/wave/field tabs, trajectories, absolute position labels or meter-heavy sidebar.
+- Choose species, initial kinetic energy in MeV (total energy for massless species), direction in degrees. Click **Ekle** to inject from the side, or click the canvas to choose the packet center without exposing numerical absolute coordinates.
+- Antiparticles are **exactly complementary hues** to their particle partners. Different species receive distinct color families. Clicking active field chips emphasizes a single field without hiding all others.
+- Choose among **29 named experiments** (QED, Breit–Wheeler, Møller/Bhabha/Compton, pair thresholds, electroweak decays, hadron decays, three-body decays and confinement limitations).
+- **Koşullu çarpışmalar:** selected 2→2 channel triggers only after compatible incoming packets overlap. The simulation never claims a cross section or reaction probability. One-particle decay channels require an explicit click.
+- Pause, one natural-time step, restart, clear and zoom are visible. A collapsible scientific-details panel holds limitations and assumptions.
 
-Build komutu, CDN veya API anahtarı gerekmez. Statik hosting ve GitHub Pages ile uyumludur.
+## Species inventory
 
-## Kullanım
+**46 catalog items**, comprising:
+- Charged leptons e, μ, τ and all charge conjugates.
+- Three neutrino flavor labels and three anti-flavors. Flavor states are *not* mass eigenstates; this model approximates them as ultrarelativistic massless sectors.
+- All six quark flavors and antiquarks **for structural/reference purposes** (not free asymptotic particles).
+- Gauge bosons: photon, eight SU(3) gluon basis labels, W+, W−, Z. Higgs scalar.
+- Effective hadronic states: proton / antiproton, neutron / antineutron, π0, π± and K±.
 
-1. Soldan **elektron, pozitron, proton, nötron, müon veya alfa çekirdeği** seçin; konum ve iki hız bileşenini girip ekleyin. Alternatif olarak tuvale tıklayarak yerleştirme modunu açın.
-2. Simülasyon çalışırken **Parçacık / Dalga / Kuantum alanı** görünümüne geçin. Görünüm değişimi fiziksel durumu sıfırlamaz.
-3. Tuvaldeki parçacığa veya sağdaki listesine tıklayarak hızını, kinetik enerjisini, de Broglie dalga boyunu ve paket genişliğini izleyin; hız bileşenlerini değiştirip **Hızı uygula** düğmesine basın.
-4. `B_z`, Coulomb yumuşatma uzunluğu ve başlangıç dalga paketi genişliğini değiştirin; hazır deneylerle başlayın. **0.25 fs** düğmesi tek-adım kontrolü sağlar.
-5. Yüklü parçacıklar arasında çekim/itme ilişkileri ile elektrik alan vektörleri görülebilir. Parçacık hareketi görünür alan sınırının dışına çıkabilir. **Görünmez duvarlar veya sahte yansımalar yoktur.**
+**Confinement matters.** Free color-charged quarks and gluons cannot be inserted or propagated as observable asymptotic particles, hence those menu options are present but disabled. Proton and pion fields are effective composite approximations. Free quark and gluon dynamics or hadronization would require a genuine QCD engine.
 
-## Denklemler ve doğruluk aralığı
+Masses are approximate PDG values in MeV. Current quark masses have renormalization-scale/scheme dependence and must not be used as universal nonperturbative constituent masses. For all channels in this version, masses are fixed external parameters; running couplings and finite-width propagators are not evaluated.
 
-### 1. Parçacık dinamiği (yarı-klasik elektromanyetizma)
+## Computed physics: rigorous in a specified model
 
-Her parçacığın gerçek kütlesi `m_i`, elektrik yükü `q_i`, konumu `r_i=(x_i,y_i)` ve relativistik momentumu `p_i=γm_iv_i` saklanır:
+Internal units: `E [MeV]`, `p [MeV/c]`, `x [fm]`, `t [fm/c]`, `ℏc = 197.3269804 MeV fm`; `c = 1` in kinematic formulas.
+
+### On-shell relativistic propagation
 
 ```text
-γ_i = 1 / sqrt(1 - |v_i|² / c²)
-v_i = p_i / (m_i sqrt(1 + |p_i|²/(m_i² c²)))
-
-F_i = sum_(j != i) k q_i q_j (r_i-r_j) / (|r_i-r_j|² + a²)^(3/2)
-       + q_i (v_i × B_z)
-k = 1 / (4π ε₀)
+E = sqrt(p_x² + p_y² + m²)
+v_x/c = p_x / E,     v_y/c = p_y / E
+K = E - m           (massive species)
+E = K               (massless species, requiring E > 0)
+r(t+dt) = r(t) + (p/E) dt
 ```
 
-Bütün uzaklıklar SI metre, zaman SI saniye cinsinden hesaplanır. 2B düzlem, **3B Coulomb yasasının düzlemsel kesitidir**; 2B elektrostatik Poisson çözümü olduğu iddia edilmez.
+Within **free propagation**, exact relativistic energy and group velocity are used. No Coulomb force is integrated here. There is intentionally no fake general electrostatic force law applied to photons, quarks, unstable bosons or ultrarelativistic neutrinos. Scattering only happens in listed channels.
 
-İntegratör: elektrik kuvveti için yarım-adım momentum itişleri, arada relativistik manyetik Boris rotasyonu, yeni konumda ikinci elektrik kuvveti itişi. Yakın karşılaşma, yüksek hız ve yüksek siklotron frekansı için **adaptif alt-adım**; kare başına hesap yükü üst sınırla korunur. Adım sınırına ulaşılırsa simülasyonun *fiziksel zamanı* geride kalır; zamanı hesap yapılmamış gibi ileri saymaz.
+### Reaction kinematics
 
-`a` Coulomb yumuşatma parametresidir (varsayılan 0.20 nm). Bu **denklemi düzenlemek için eklenen sayısal yaklaşım**dır, fundamental fiziksel parçacık boyutu değildir. Çok yakın karşılaşmalar, bağlanmış atom sistemleri ve tünelleme için güvenilmezdir.
+Each listed process is an explicitly **conditioned channel**. Its initial and final states must match exact particle IDs. The engine checks:
+- Conserved total electric charge, baryon number and each charged-lepton-family number, assuming no flavor mixing.
+- Total invariant energy `sqrt(s)` and final-state rest-mass threshold.
+- Exact on-shell two-body outgoing momenta in the incoming center-of-momentum frame.
+- Lorentz boost back to the laboratory frame with total **four-momentum conservation**.
+- Three-body final states by two successive two-body decays with a sampled intermediate invariant mass. This is a valid kinematic phase-space point, **not** a sampled weak V−A matrix element or exact differential decay spectrum.
 
-Kinetik ve potansiyel enerji:
+The outgoing azimuthal angle is uniformly sampled in the **2D demonstration plane** and does not reproduce measured 3D angular distributions. Sampled channel outcome is *not* weighted by a physical matrix element. Pair annihilation and Compton elastic channels therefore exhibit physically **allowed** four-momentum arrangements but not predictive event rates. No spontaneous decay lifetime simulation is enabled, so macroscopic muon/neutron lifetimes do not get silently accelerated into fictitious femtometer-scale lifetimes.
+
+For `γγ → e⁻e⁺`, two colliding photons need enough invariant mass to create the pair. Same-direction photons have `s=0`, even when both are individually energetic. Both situations have explicit blocked presets.
+
+**32 registered processes** (including one correctly unavailable hadronizing Higgs channel) cover QED annihilation/scattering, high-energy lepton pair production, Compton, Z/W/H, pion/kaon/muon/tau and neutron beta-decay illustrations. Nothing not listed is assumed to take place automatically.
+
+### Visualized packet amplitudes
+
+For every incoming particle, a **2D paraxial scalar single-particle packet** is drawn. Its centroid is propagated by the relativistic group velocity. The carrier obeys the on-shell dispersion `ω=E/ℏ`. The Gaussian longitudinal and transverse widths are obtained from the Hessian of `E(p)=sqrt(m²+|p|²)` around each packet's central momentum:
 
 ```text
-T = Σ_i (γ_i - 1) m_i c²
-U = Σ_(i<j) k q_i q_j / sqrt(|r_i-r_j|² + a²)
-E = T + U
+d²E/dp_parallel² = m² / E³
+d²E/dp_perpendicular² = 1/E
+
+σ_parallel(t) = σ₀ sqrt(1 + [ℏc t m²/(2 σ₀² E³)]²)
+σ_perp(t)     = σ₀ sqrt(1 + [ℏc t/(2 σ₀² E)]²)
 ```
 
-Tekdüze sabit dış manyetik alan tek başına iş yapmaz. Enerji sapması, en son sahne/parametre/hız değişiminden sonraki toplam enerjiyi karşılaştırır. Büyük sapma, integrasyonun verilen zaman/konum ölçeğinde yeterli olmadığını gösterebilir.
+This **paraxial approximation is reliable only when the momentum spread is small compared to a scale over which the dispersion curvature changes.** It is NOT a solution to the Dirac equation, Maxwell equations, Proca equations, interacting Klein–Gordon field, quantum chromodynamics or a true many-body Fock-space evolution. The displayed real signed amplitude should not be identified with a measurement of the quantum field operator; e.g. `⟨1|φ̂|1⟩=0` for ordinary number states. The visualization is a wavepacket projection, not an interacting vacuum expectation value.
 
-### 2. Dalga görünümü (serbest Gauss Schrödinger paketleri)
+Packets from different species are **drawn with additive color blending**, not summed as mutually coherent scalar quantum wavefunctions. Carrier oscillations with wavelengths smaller than the screen resolution are **suppressed** rather than aliased into false interference patterns. Phase/time at very high energies can also be undersampled visually.
 
-Parçacık başına başlangıçta standart sapması `σ₀` olan, **2B normalize serbest paket yoğunluğu**:
+### Absent physics (explicit)
+
+- Interacting QFT: Feynman amplitudes, perturbative matrix elements, loop corrections and running couplings.
+- Real differential/total cross sections, selection/branching probabilities, physical sampling of 3D scattering angles.
+- Spin, helicity/chirality, fermionic antisymmetrization, genuine many-body entanglement and quantum measurement.
+- Real-space QCD gluon fields, color confinement dynamics, jets and hadronization.
+- Decay lifetime sampling, radiative corrections and particle-width/virtual/off-shell propagation.
+- Oscillating neutrino mass eigenstates with PMNS; exact neutrino rest masses.
+- Electromagnetic radiation fields, renormalization, gauge fixing and finite spacetime-grid solvers.
+
+For experimental predictions or particle-detector simulation, real HEP software should be integrated as a separately validated backend (e.g. **MadGraph5_aMC@NLO** for matrix elements, **Pythia8** for shower/hadronization, **Geant4** for detector transport, and **ROOT/HepMC** for event data). Such a backend has **not** been integrated here.
+
+## Model validation
+
+Run `npm test`. Tests validate:
+- Complete fundamental-sector registry and particle/antiparticle charges/colors.
+- Prohibition of free colored particles.
+- On-shell relativistic dispersion and massless speed.
+- Threshold/parallel-photon prohibitions.
+- All supported experiments' electric-charge and baryon/lepton-number constraints.
+- Four-momentum conservation in every allowed preset, including three-body decays and boosted Compton scattering.
+- Explicit auto-collision condition, no spontaneous unlisted reactions, and finite packet amplitude.
+
+Older 2D Newton/Coulomb/dot-based code was removed from the current branch, but is preserved in Git history.
+
+## Sources
+
+- [Particle Data Group 2025, Review of Particle Physics](https://pdg.lbl.gov/2025/)
+- [PDG 2025 particle mass/decay listings](https://pdg.lbl.gov/2025/listings/particle_properties.html)
+- [PDG 2025 Standard Model and QCD reviews](https://pdg.lbl.gov/2025/reviews/standard_model_and_related.html)
+- [NIST fundamental constants](https://physics.nist.gov/cuu/Constants/)
+
+## Current modules
 
 ```text
-σ(t) = σ₀ sqrt(1 + [ħ t/(2 m σ₀²)]²)
-ρ_i(r,t) = 1/(2πσ(t)²) exp(-|r-r_i(t)|²/(2σ(t)²))
-λ_deBroglie = h / |p|
+index.html                Minimal full-width laboratory
+src/field.css             Responsive styling
+src/catalog.js            Particle states, conjugation, confinement, PDG-based masses
+src/field-physics.js      Natural-unit propagation and on-shell reaction kinematics
+src/field-renderer.js     Layered complex-amplitude proxy field visualization
+src/field-app.js          Presets, interaction controls, UI lifecycle
+src/presets.js            29 physically scoped and explanatory experiments
+tests/field.test.mjs      Catalog, threshold, conservation and simulation regression tests
+.github/workflows/ci.yml Automated syntax and physics tests
 ```
-
-Ekrandaki toplam yoğunluk `Σ_i ρ_i` beklenen parçacık **sayı yoğunluğu** görselleştirmesidir, ayrı parçacık genliklerinin koherent toplamı değildir. Bu nedenle **iki-parçacık girişimi veya antibozon/fermiyon değişim simetrisi hesaplanmıyor**.
-
-Paket **genişlemesi, serbest Schrödinger denkleminin analitik çözümüdür**; paket merkezi ise yukarıdaki etkileşimli klasik denklemlerden alınır. Dolayısıyla etkileşen çok-parçacık Schrödinger denkleminin tam çözümü değildir. Görelilik düzeltmeleri dalga denkleminde yoktur, dolayısıyla özellikle `v ≳ 0.1c` için güvenilir değildir. Yüksek enerjili konum lokalizasyonu ve parçacık üretimi de yoktur.
-
-### 3. Kuantum alanı görünümü (tek-parçacık sektörü)
-
-Seçili parçacık için tek-parçacık nonrelativistik alan genliği
-
-```text
-A_s(r,t) = <0| Ψ̂_s(r) |1_ψ>
-```
-
-serbest Gauss dalga paketi yaklaşımından elde edilir ve **Re A_s** çizilir. Mavi/mor işaret, kompleks genliğin pozitif/negatif reel parçasını belirtir; doğrudan ölçülebilir olasılık değildir. Fazda `p·(r-r_c)/ħ`, serbest paket chirp'i ve birikimli kinetik faz kullanılır. Etkileşimli harekette **yarı-klasik taşıma** yapıldığı için bu bir tam etkileşimli alan çözümü değildir. Seçili parçacık değiştiğinde gösterilen alan da değişir; her tür için bağımsız bir Hilbert uzayı kurulmaz.
-
-Turuncu oklar ayrı bir **klasik elektrik alanı** `E(r)=Σ_i k q_i (r-r_i) / (|r-r_i|²+a²)^(3/2)` gösterir. Bu, kuantize elektromanyetik alan değildir.
-
-### Fiziksel sınırlar
-
-- **Yok:** foton yayımı/soğurulması, elektromanyetik dalganın retarde yayılımı, parçacıkların birbirinden oluşturduğu manyetik alan, spin, istatistik, dolaşıklık, ölçüm çökmesi, QED döngüleri, anihilasyon veya çift oluşumu.
-- **Yok:** güçlü/ zayıf kuvvet, nükleer bağlanma, nötron/müon bozunması, çok-parçacık kuantum saçılması, atom orbitalleri veya kimyasal bağlar.
-- **Alfa çekirdeği:** `+2e` yüküne sahip noktasal klasik kompozit olarak temsil edilir; iç nükleer yapı hesaplanmaz.
-- **Nötron:** yüklü değildir, bu elektromanyetik modelde serbest hareket eder; gerçek nötronun manyetik dipol momenti hesaba katılmaz.
-- **Sınırlar:** yansıtıcı duvar veya periyodik sınır yoktur. Parçacık tuval dışına çıkabilir.
-- **Alan:** yalnızca dışarıdan verilen uniform `B_z` ve yüklerin düzenlenmiş *anlık* statik elektrik alanı hesaplanır. Çok yüksek `B` değerleri (±4000 T) fizik açısından uç parametrelerdir; öğrenme ve görselleştirme içindir.
-- **Sayısal doğruluk:** enerji sapması ve testler, seçilen yaklaşımın içinde tutarlılık kontrolüdür; eksik fiziği kanıtlamaz.
-
-## Doğrulama
-
-`tests/physics.test.mjs` şu değişmezleri denetler:
-
-- relativistik momentum/hız dönüşümleri ve `|v|<c`;
-- zıt yük çekimi ve Newton'un üçüncü yasası;
-- nötr parçacığa elektromanyetik kuvvet uygulanmaması;
-- serbest dalga paketi genişleme formülü ve 2B olasılık normu;
-- dış manyetik alanın enerjiye iş yapmaması;
-- elektrostatik alanın düzenlenmiş potansiyelin negatif gradyanına eşitliği;
-- kuvvetsiz parçacığın düzgün doğrusal hareketi;
-- ayrık iki-parçacık sisteminde yaklaşık enerji korunumu.
-
-## Kaynaklar
-
-- [NIST CODATA 2022 fiziksel sabitler](https://physics.nist.gov/cuu/pdf/all.pdf), özellikle `c`, `h`, `ħ`, `e`, `ε₀`, elektron/proton/müon/nötron kütleleri.
-- [NIST 2022 sabitler tablosu](https://physics.nist.gov/cuu/pdf/wall_2022.pdf).
-- [Serbest Gauss paketinin analitik genişlemesi](https://marcinplodzien.github.io/quantum-many-body-simulation/ch01_computational_toolbox/00a_free_particle_gaussian_wave_packet.html).
-
-## Mimari
-
-```text
-index.html              Sayfa ve erişilebilir kontroller
-src/constants.js        SI birim sabitleri ve parçacık veri tabanı
-src/physics.js          Denklemler, integratör, enerji ve paket fonksiyonları
-src/renderer.js         Canvas 2D parçacık / dalga / alan katmanları
-src/app.js              Kontrol olayları, deneyler, simülasyon döngüsü
-src/styles.css          Duyarlı arayüz
-tests/physics.test.mjs  Fizik invariantları ve analitik kontroller
-.github/workflows/ci.yml  Test ve JavaScript sözdizimi kontrolleri
-```
-
-Lisans: Henüz belirtilmedi.
