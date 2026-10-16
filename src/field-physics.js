@@ -156,7 +156,7 @@ export class FieldLab {
     const ampl=Math.exp(-.25*(longitudinal*longitudinal/(sx*sx)+transverse*transverse/(sy*sy)));
     const chirp=.25*((l/(1+l*l))*longitudinal**2/s0**2+(t/(1+t*t))*transverse**2/s0**2);
     // Phase evaluated around a moving centroid, with appropriate on-shell E.
-    const phase=(p.px*dx+p.py*dy+(norm(p)**2/E-E)*delta)/HC+
+    const phase=(p.px*dx+p.py*dy)/HC+
       chirp-.5*(Math.atan(l)+Math.atan(t))+p.phase;
     return ampl*Math.cos(phase);
   }
