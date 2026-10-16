@@ -10,7 +10,7 @@ const PI=Math.PI;
 const same=(arr,a,b)=>arr.length===2&&((arr[0]===a&&arr[1]===b)||(arr[0]===b&&arr[1]===a));
 export const invariantS=(a,b)=>{
   const A=four(a),B=four(b);
-  return Math.max(0,2*SPECIES[a.type].mass**2+2*SPECIES[b.type].mass**2+
+  return Math.max(0,SPECIES[a.type].mass**2+SPECIES[b.type].mass**2+
     2*(A.E*B.E-A.px*B.px-A.py*B.py));
 };
 export function breitWheelerCrossSection(s,m=ME){
