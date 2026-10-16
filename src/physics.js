@@ -108,7 +108,8 @@ export class ParticleLab {
       p.yNm += v.vy * dt / C.nm;
       // Free Schrödinger phase; used only as a local semiclassical visualization.
       const eFree = (p.px * p.px + p.py * p.py) / (2 * s.mass);
-      p.phase = ((p.phase - eFree * dt / C.hbar) % (2 * Math.PI));
+      // p·(r-r_c) is measured relative to the moving centroid, hence +E t / ħ.
+      p.phase = ((p.phase + eFree * dt / C.hbar) % (2 * Math.PI));
     }
     const f1 = this.forces();
     for (let i = 0; i < this.particles.length; i++) {
@@ -221,7 +222,8 @@ export class ParticleLab {
   describe(p) {
     const s = SPECIES[p.type], v = velocityFromMomentum(s.mass, p.px, p.py);
     const mom = Math.hypot(p.px, p.py);
-    const energy = s.mass * C.c * C.c * (v.gamma - 1);
+    const z = mom / (s.mass * C.c);
+    const energy = s.mass * C.c * C.c * z * z / (v.gamma + 1);
     return {
       ...v, speedKmS: Math.hypot(v.vx, v.vy) / 1000, beta: Math.hypot(v.vx, v.vy) / C.c,
       momentum: mom, wavelengthNm: mom > 0 ? C.h / mom / C.nm : Infinity,

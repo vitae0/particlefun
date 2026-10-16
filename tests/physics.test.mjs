@@ -91,3 +91,21 @@ test('total energy remains approximately conserved for separated pair', () => {
   const b = lab.energy().total;
   assert.ok(Math.abs((b - a) / a) < 0.02, 'conserved energy relative drift too high');
 });
+
+test('free field phase agrees with moving-centroid free Schrödinger phase', () => {
+  const lab = new ParticleLab();
+  const p = lab.add('electron', 0, 0, 100, 0);
+  const t = 0.07;
+  lab.advance(t);
+  const m = SPECIES.electron.mass;
+  const e = (p.px * p.px + p.py * p.py) / (2 * m);
+  const tau = C.hbar * t * C.fs / (2 * m * (lab.sigma0Nm * C.nm) ** 2);
+  const expected = Math.cos(e * t * C.fs / C.hbar - Math.atan(tau)) / (Math.sqrt(2 * Math.PI) * lab.packet(p).sigma);
+  assert.ok(Math.abs(lab.fieldAt(p, p.xNm, p.yNm) - expected) < 1e-8);
+});
+
+test('very slow kinetic energy avoids cancellation near gamma = 1', () => {
+  const lab = new ParticleLab();
+  const p = lab.add('electron', 0, 0, 0.001, 0);
+  assert.ok(lab.describe(p).kineticEV > 0);
+});

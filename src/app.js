@@ -22,7 +22,7 @@ function setSelected(p) {
   renderer.selectedId = p?.id ?? null;
   if (p) {
     const d = lab.describe(p);
-    $('inputX').value = fmt(p.xNm, 3).replaceAll('.', '').includes(',') ? p.xNm.toFixed(3) : p.xNm.toFixed(3);
+    $('inputX').value = p.xNm.toFixed(3);
     $('inputY').value = p.yNm.toFixed(3);
     $('inputVx').value = (d.vx / 1000).toFixed(2);
     $('inputVy').value = (d.vy / 1000).toFixed(2);
