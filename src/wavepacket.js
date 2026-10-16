@@ -41,13 +41,17 @@ export function packetAt(p, requestedSigma, dt, x,y,z=0){
   const across2=Math.max(0,dx*dx+dy*dy+dz*dz-along*along);
   const exponent=along*along/(g.sigmaL*g.sigmaL)+
     across2/(g.sigmaT*g.sigmaT);
+  // Relative brightness is bounded in [0,1]. Absolute 3D spatial
+  // probability density integrates to one and has units fm^-3.
   const probability=Math.min(1,g.peakProbabilityRatio*Math.exp(-.5*exponent));
+  const densityFm3=Math.exp(-.5*exponent)/
+    (Math.pow(2*Math.PI,1.5)*g.sigmaL*g.sigmaT*g.sigmaT);
   const chirp=(.25/g.sigma0**2)*(
     g.longitudinal/(1+g.longitudinal**2)*along*along+
     g.transverse/(1+g.transverse**2)*across2);
   // Gouy/normalization phase for one longitudinal and two transverse axes.
   const phase=(px*dx+py*dy+pz*dz)/HC+chirp-
     .5*(Math.atan(g.longitudinal)+2*Math.atan(g.transverse))+(p.phase||0);
-  return {probability, realAmplitude:Math.sqrt(probability)*Math.cos(phase),
+  return {probability, densityFm3, realAmplitude:Math.sqrt(probability)*Math.cos(phase),
     phase, geometry:g};
 }
