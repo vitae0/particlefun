@@ -55,7 +55,7 @@ test('all Gaussian real amplitudes bounded by the normalized envelope',()=>{
 test('scientific electron default plots Coulomb potential, not arbitrary phase rings',()=>{
  const fake={getContext(){return {}},getBoundingClientRect(){return {width:800,height:500}}};
  const old=globalThis.document;
- globalThis.document={createElement(){return{getContext(){return {}},width:0,height:0}}}};
+ globalThis.document={createElement(){return {getContext(){return {};},width:0,height:0};}};
  try{
    const r=new ScientificRenderer(fake,new FieldLab());
    assert.equal(r.display,'potential');
