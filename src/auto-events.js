@@ -11,7 +11,7 @@ const same=(arr,a,b)=>arr.length===2&&((arr[0]===a&&arr[1]===b)||(arr[0]===b&&ar
 export const invariantS=(a,b)=>{
   const A=four(a),B=four(b);
   return Math.max(0,SPECIES[a.type].mass**2+SPECIES[b.type].mass**2+
-    2*(A.E*B.E-A.px*B.px-A.py*B.py));
+    2*(A.E*B.E-A.px*B.px-A.py*B.py-(A.pz||0)*(B.pz||0)));
 };
 export function breitWheelerCrossSection(s,m=ME){
   if(!(s>4*m*m))return 0;
@@ -61,22 +61,24 @@ export function crossSections(a,b){
   if(same(types,'photon','e')||same(types,'photon','ae')){
     const photon=a.type==='photon'?a:b,electron=a.type==='photon'?b:a;
     const pf=four(photon),ef=four(electron);
-    const restPhoton=(pf.E*ef.E-pf.px*ef.px-pf.py*ef.py)/ME;
+    const restPhoton=(pf.E*ef.E-pf.px*ef.px-pf.py*ef.py-(pf.pz||0)*(ef.pz||0))/ME;
     append(electron.type==='e'?'compton':'antiCompton',
       kleinNishinaCrossSection(restPhoton/ME),'Klein–Nishina total');
   }
   return out.filter(c=>channelStatus(reaction(c.id),[a,b]).ok);
 }
 function threeDOverlap(a,b,sigma){
-  const dx=a.x-b.x,dy=a.y-b.y;
-  const r2=dx*dx+dy*dy;const s2=sigma*sigma;
+  const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);
+  const r2=dx*dx+dy*dy+dz*dz;const s2=sigma*sigma;
   // Independent normalized Gaussian 3D packets of equal width.
   return Math.exp(-r2/(4*s2))/Math.pow(4*Math.PI*s2,1.5);
 }
 function moller(a,b){
   const A=four(a),B=four(b),v1x=A.px/A.E,v1y=A.py/A.E,v2x=B.px/B.E,v2y=B.py/B.E;
-  const vx=v1x-v2x,vy=v1y-v2y,cr=v1x*v2y-v1y*v2x;
-  return Math.sqrt(Math.max(0,vx*vx+vy*vy-cr*cr));
+  const v1z=(A.pz||0)/A.E,v2z=(B.pz||0)/B.E;
+  const vx=v1x-v2x,vy=v1y-v2y,vz=v1z-v2z;
+  const cx=v1y*v2z-v1z*v2y,cy=v1z*v2x-v1x*v2z,cz=v1x*v2y-v1y*v2x;
+  return Math.sqrt(Math.max(0,vx*vx+vy*vy+vz*vz-cx*cx-cy*cy-cz*cz));
 }
 const DECAYS={
  Z: [['Zee',.03363],['Zmm',.03366],['Ztt',.03370],['Zvv',.0667]],
@@ -152,7 +154,7 @@ export class AutomaticEvents {
   for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
    const a=parts[i],b=parts[j],key=[a.id,b.id].join(':');
    if(this.exposure.has(key))continue;
-   const r=Math.hypot(a.x-b.x,a.y-b.y);
+   const r=Math.hypot(a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0));
    if(r>3*this.lab.packetSigma)continue;
    const cs=crossSections(a,b);
    // Every time increment samples its own Poisson hazard. A single crossing
@@ -220,7 +222,8 @@ export class AutomaticEvents {
     // No fictitious speed-up of the decay rate; display time jumps to sampled event.
     for(const p of this.lab.fields){
       const E=energy(p);p.x+=p.px/E*dt;p.y+=p.py/E*dt;
-      p.phase=((p.phase+((p.px*p.px+p.py*p.py)/E-E)*dt/HC)%(2*Math.PI));
+      p.z=(p.z||0)+(p.pz||0)/E*dt;
+      p.phase=((p.phase+((p.px*p.px+p.py*p.py+(p.pz||0)**2)/E-E)*dt/HC)%(2*Math.PI));
     }
     this.lab.clock=next.due;
   }
@@ -229,9 +232,9 @@ export class AutomaticEvents {
   if(p)this.decay(p);
   // Only translate reference origin to keep result visible; no change to relative physics.
   const anchor=this.lab.fields[0];
-  if(anchor&&Math.max(Math.abs(anchor.x),Math.abs(anchor.y))>this.lab.widthFm){
-    const ax=anchor.x,ay=anchor.y;
-    for(const f of this.lab.fields){f.x-=ax;f.y-=ay;}
+  if(anchor&&Math.max(Math.abs(anchor.x),Math.abs(anchor.y),Math.abs(anchor.z||0))>this.lab.widthFm){
+    const ax=anchor.x,ay=anchor.y,az=anchor.z||0;
+    for(const f of this.lab.fields){f.x-=ax;f.y-=ay;f.z=(f.z||0)-az;}
   }
   this.synchronize();
   return {dt,record:this.observations[0]};
