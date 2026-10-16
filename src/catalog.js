@@ -63,6 +63,15 @@ for(const [id,hue] of [
 catalog.photon.colorHue=274;
 catalog.Z.colorHue=299;
 catalog.H.colorHue=54;
+// Effective experimental composite objects. These are not elementary SM particles.
+item('alpha','α²⁺ · helium nucleus','hadron',3727.379378,2,
+  {spin:0,composite:true,colorHue:17});
+item('gold','Au⁷⁹⁺ · gold nucleus','hadron',183473,79,
+  {spin:1.5,composite:true,colorHue:47});
+item('silver','Ag · silver atom','hadron',100.905*931.49410372,0,
+  {spin:.5,composite:true,colorHue:110});
+item('mercury','Hg · mercury atom','hadron',200.59*931.49410372,0,
+  {spin:0,composite:true,colorHue:165});
 export const SPECIES = Object.freeze(catalog);
 export const GROUPS = Object.freeze([
  ['lepton','Yüklü leptonlar'],['neutrino','Nötrinolar'],
