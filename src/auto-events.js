@@ -94,7 +94,7 @@ const clamp01=x=>Math.max(0,Math.min(1,x));
 export class AutomaticEvents {
  constructor(lab,random=Math.random){
   this.lab=lab;this.random=random;this.mode='sample';
-  this.decays=new Map();this.exposure=new Set();
+  this.decays=new Map();this.exposure=new Set();this.precisionStep=.35;
   this.observations=[];this.trials=0;this.hits=0;
   this.unresolved=[];
  }
@@ -154,14 +154,14 @@ export class AutomaticEvents {
    const r=Math.hypot(a.x-b.x,a.y-b.y);
    if(r>3*this.lab.packetSigma)continue;
    const cs=crossSections(a,b);
-   // Pair's encounter is recorded once when their packet centers overlap.
-   if(!cs.length){this.exposure.add(key);continue;}
+   // Every time increment samples its own Poisson hazard. A single crossing
+   // integrates the hazard across the full encounter, not only the first edge.
+   if(!cs.length)continue;
    const speed=moller(a,b),density=threeDOverlap(a,b,this.lab.packetSigma);
    const rates=cs.map(c=>({...c,rate:c.sigma*speed*density}));
    const total=rates.reduce((s,c)=>s+c.rate,0);
    const prob=clamp01(1-Math.exp(-total*Math.max(dt,0)));
    this.trials++;
-   this.exposure.add(key);
    if(this.mode==='expected'){
       this.log('Beklenen P = '+(100*prob).toPrecision(3)+'% · '+rates.map(x=>x.id).join(' / '),
        {prob,expected:true});continue;
@@ -173,6 +173,7 @@ export class AutomaticEvents {
    let u=this.random()*total,chosen=rates[rates.length-1];
    for(const c of rates){u-=c.rate;if(u<=0){chosen=c;break;}}
    try{
+     this.exposure.add(key);
      const result=this.lab.react(chosen.id,[a.id,b.id]);
      this.hits++;
      this.log('Otomatik çarpışma · '+result.record.label,
@@ -192,7 +193,7 @@ export class AutomaticEvents {
   while(left>0&&steps++<128){
     const next=this.nextDue();
     const before=next?Math.max(0,next.due-this.lab.clock):Infinity;
-    const chunk=Math.min(left,before,4);
+    const chunk=Math.min(left,before,this.precisionStep||0.35);
     if(chunk>1e-14){this.lab.advance(chunk);this.collisions(chunk);left-=chunk;}
     else if(next&&before<1e-10){const p=this.lab.fields.find(p=>p.id===next.id);
       this.decays.delete(next.id);
