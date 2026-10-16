@@ -50,10 +50,10 @@ export class FieldRenderer {
     // Field amplitudes from different species overlay as radiance, not coherent quantum amplitudes.
     for(const p of this.lab.fields){
       const species=SPECIES[p.type];
-      const hue=(species.colorHue + (p.type.length*13)%19)%360;
+      const hue=species.colorHue;
       const [r,g,b]=this.rgb(hue);
       const selected=this.selected===null||this.selected===p.id;
-      const blend=selected?.96:.38;
+      const blend=selected ? 0.96 : 0.38;
       const vel=norm(p)/energy(p),delta=this.lab.clock-p.birth;
       const ell=species.mass**2/energy(p)**3;
       const transverse=1/energy(p);
