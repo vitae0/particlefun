@@ -1,0 +1,33 @@
+// Explicit beam initialization (MeV, fm), not experimental cross-section sampling.
+export const PRESETS = Object.freeze([
+ {id:'annihilation',name:'e⁻ e⁺ → 2γ',group:'QED',description:'Karşılıklı lepton demetleri. Paketin örtüşmesiyle koşullu 2γ kanalı tetiklenir; gerçek kesit hesaplanmaz.',beams:[['e',12,0,-11,0],['ae',12,180,11,0]],channel:'ee2gg'},
+ {id:'bhabha',name:'Bhabha: e⁻e⁺ elastik',group:'QED',description:'Leptonların elastik saçılması: dört-momentum korunur; açısal dağılım tam QED değildir.',beams:[['e',20,0,-11,0],['ae',20,180,11,0]],channel:'bhabha'},
+ {id:'moller',name:'Møller: e⁻e⁻ elastik',group:'QED',description:'Özdeş elektronların elastik kanal örneği. Fermi antisimetrizasyonu hesaba katılmaz.',beams:[['e',18,0,-10,0],['e',18,180,10,0]],channel:'moller'},
+ {id:'compton',name:'Compton: γe⁻ → γe⁻',group:'QED',description:'Önceden seçilmiş Compton kanalı, relativistik 2→2 kinematiği.',beams:[['photon',18,0,-11,0],['e',0,0,6,0]],channel:'compton'},
+ {id:'light',name:'Foton dalga paketleri',group:'Alanlar',description:'İki foton tek-paket genliği olarak çizilir. Etkileşim oranları yoktur.',beams:[['photon',7,0,-10,-3],['photon',7,180,10,3]]},
+ {id:'dipole',name:'Elektron & pozitron alanı',group:'Alanlar',description:'Karşıt yükler ve antiparçacıklar karşıt renk aileleriyle görünür.',beams:[['e',2,45,-5,-4],['ae',2,225,5,4]]},
+ {id:'leptons',name:'e / μ / τ ailesi',group:'Alanlar',description:'Üç yüklü lepton alanını aynı kesitte karşılaştır.',beams:[['e',4,15,-7,0],['mu',50,165,7,0],['tau',40,90,0,-7]]},
+ {id:'neutrinos',name:'Altı nötrino/antinötrino',group:'Alanlar',description:'Nötrino tat alanları ultra-relativistik, kütlesiz yaklaşık olarak taşınır; PMNS osilasyonu çözülmez.',beams:[['ve',3,0,-10,0],['ave',3,180,10,0],['vm',3,90,0,-7],['avm',3,270,0,7],['vt',3,45,-8,-8],['avt',3,225,8,8]]},
+ {id:'breit',name:'γγ → e⁻e⁺',group:'Çift üretimi',description:'Breit-Wheeler süreci, iki karşıt fotonun merkez-kütle enerjisi kütle eşiğini geçer.',beams:[['photon',8,0,-12,0],['photon',8,180,12,0]],channel:'gg2ee'},
+ {id:'below',name:'Eşik altı γγ (yasak)',group:'Çift üretimi',description:'Her biri 0.35 MeV iki foton: √s = 0.70 MeV < 2m_e. Çift üretimi gerçekleşemez.',beams:[['photon',.35,0,-8,0],['photon',.35,180,8,0]],channel:'gg2ee'},
+ {id:'parallel',name:'Paralel γγ (yasak)',group:'Çift üretimi',description:'Eş yönlü fotonların √s = 0 olması nedeniyle çift üretimi yasaktır.',beams:[['photon',50,0,-10,-2],['photon',50,0,-10,2]],channel:'gg2ee'},
+ {id:'muPairs',name:'e⁻e⁺ → μ⁻μ⁺',group:'Çift üretimi',description:'Kütle eşiğini geçen e⁻e⁺ çarpışması; son durum müon çifti.',beams:[['e',160,0,-12,0],['ae',160,180,12,0]],channel:'ee2mumu'},
+ {id:'tauPairs',name:'e⁻e⁺ → τ⁻τ⁺',group:'Çift üretimi',description:'Daha ağır tau çiftinin üretimi için GeV mertebesinde enerji.',beams:[['e',2000,0,-12,0],['ae',2000,180,12,0]],channel:'ee2tautau'},
+ {id:'gammaMuons',name:'γγ → μ⁻μ⁺',group:'Çift üretimi',description:'İki fotondan müon çiftine izinli 2→2 geçiş.',beams:[['photon',180,0,-12,0],['photon',180,180,12,0]],channel:'gg2mumu'},
+ {id:'muAnnihilation',name:'μ⁻μ⁺ → γγ',group:'QED',description:'Yüklü ağır leptonların iki fotona koşullu anihilasyon kanalı.',beams:[['mu',60,0,-10,0],['amu',60,180,10,0]],channel:'mm2gg'},
+ {id:'Zee',name:'Z⁰ → e⁻e⁺',group:'Elektrozayıf',description:'Z bozunması koşullandırılmıştır; W/Z yaşam süresi stokastik simüle edilmez.',beams:[['Z',0,0,0,0]],channel:'Zee'},
+ {id:'Zmu',name:'Z⁰ → μ⁻μ⁺',group:'Elektrozayıf',description:'Z bozonunun müon çiftine bozunma kanalı.',beams:[['Z',0,0,0,0]],channel:'Zmm'},
+ {id:'Wplus',name:'W⁺ → e⁺νe',group:'Elektrozayıf',description:'Yük ve lepton sayısı korunur. Bozunma manuel tetiklenir.',beams:[['Wp',0,0,0,0]],channel:'Wp_e'},
+ {id:'Wminus',name:'W⁻ → μ⁻ν̄μ',group:'Elektrozayıf',description:'W⁻ bozonunun müon ve antinötrino kanalı.',beams:[['Wm',0,0,0,0]],channel:'Wm_mu'},
+ {id:'Hgamma',name:'H → γγ',group:'Elektrozayıf',description:'Higgs iki foton kanalı. Loop genliği/branching oranı hesaplanmıyor.',beams:[['H',0,0,0,0]],channel:'Hgg'},
+ {id:'pi0',name:'π⁰ → γγ',group:'Hadron bozunmaları',description:'Nötr piondan iki zıt yönde foton: izinli kinematik.',beams:[['pi0',0,0,0,0]],channel:'piz'},
+ {id:'piPlus',name:'π⁺ → μ⁺νμ',group:'Hadron bozunmaları',description:'Yüklü pion bozunması (etkin hadron yaklaşımı).',beams:[['pip',0,0,0,0]],channel:'pip'},
+ {id:'kaon',name:'K⁺ → μ⁺νμ',group:'Hadron bozunmaları',description:'Kaonun müonik bozunma kanalı.',beams:[['Kp',0,0,0,0]],channel:'Kp'},
+ {id:'muonDecay',name:'μ⁻ → e⁻ν̄eνμ',group:'Üç cisim',description:'Doğru son durum ve dört-momentum; Michel spektrumu/V−A matris elemanı henüz uygulanmaz.',beams:[['mu',0,0,0,0]],channel:'muDecay'},
+ {id:'tauDecay',name:'τ⁻ → μ⁻ν̄μντ',group:'Üç cisim',description:'Relativistik ardışık iki cisimli faz uzayı ile üç cisim oluşturulur.',beams:[['tau',0,0,0,0]],channel:'tauDecay'},
+ {id:'neutron',name:'n → p e⁻ν̄e',group:'Üç cisim',description:'Serbest nötron beta bozunması; hızlandırılmış koşullu olaydır, 879 s beklenmez.',beams:[['n',0,0,0,0]],channel:'neutron'},
+ {id:'proton',name:'Proton bileşik alanı',group:'QCD sınırı',description:'Proton, uud valans kuarklarından oluşur. Gerçek kuark/gluon kafes QCD dinamiği çözülmez.',beams:[['p',0,0,0,0]]},
+ {id:'antiproton',name:'Proton / antiproton',group:'QCD sınırı',description:'Baryon ve antibaryon için tamamlayıcı renkler. Hadron anihilasyonu modellenmez.',beams:[['p',6,0,-8,0],['ap',6,180,8,0]]},
+ {id:'empty',name:'Boş laboratuvar',group:'Alanlar',description:'Sıfırdan deney kur.',beams:[]}
+]);
+export function presetById(id){return PRESETS.find(p=>p.id===id)}
