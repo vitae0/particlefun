@@ -90,11 +90,11 @@ function stepForward(){
   const result=apparatus.fastForward();
   if(result){
    events.synchronize();
-   if(result.approximation==='paraxial spin force'){
+   if(result.approximation==='paraxial spin force'||result.approximation?.startsWith('relativistic E/B RK4')){
     const detectorY=lab.fields.map(p=>p.y);
     plot.camera.x=result.device.x;
     plot.camera.y=(Math.max(...detectorY)+Math.min(...detectorY))/2;
-    plot.camera.span=Math.max(3e11,3*(Math.max(...detectorY)-Math.min(...detectorY)));
+    plot.camera.span=Math.max(result.approximation==='paraxial spin force'?3e11:5e12,3*(Math.max(...detectorY)-Math.min(...detectorY)));
     updateZRange();
    }
    const label=result.approximation==='paraxial spin force'?'Spin-demet uçuşu (paraksiyel)':result.device.kind==='oilDrop'?'Millikan/Stokes damla hareketi':'Tek foton aygıt uçuşu';
@@ -240,7 +240,18 @@ $('slice').addEventListener('input',e=>{
 $('instrument').addEventListener('click',()=>{
  remember();
  const p=apparatus.fastForward();
- if(p){events.synchronize();addTrail();note('Ölçüm aygıtına uçuş: Δt='+fmt(p.dt)+' fm/c.');timeText();plot.draw();return;}
+ if(p){
+  events.synchronize();addTrail();
+  if(p.approximation==='paraxial spin force'||p.approximation?.startsWith('relativistic E/B RK4')){
+    const yValues=lab.fields.map(q=>q.y);
+    plot.camera.x=p.device.x;
+    plot.camera.y=(Math.min(...yValues)+Math.max(...yValues))/2;
+    plot.camera.span=Math.max(p.approximation==='paraxial spin force'?3e11:5e12,3*(Math.max(...yValues)-Math.min(...yValues)));
+    updateZRange();
+  }
+  note('Ölçüm aygıtına uçuş: Δt='+fmt(p.dt)+' fm/c.'+(p.approximation?' · '+p.approximation:''));
+  timeText();plot.draw();return;
+ }
  const hasForce=transport.forces().some(f=>Math.hypot(...f)>1e-16);
  if(hasForce){history.pop();note('Kuvvetli yörüngede analitik atlama fiziksel değil. Normal integratörü kullan.');return;}
  const d=events.jumpToNextDecay();
