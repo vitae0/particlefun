@@ -112,7 +112,7 @@ test('HOM indistinguishable zero-delay photons have no coincidence',()=>{
  near(evaluate('hom',4).probability,.5*(1-Math.exp(-8)));
 });
 test('Josephson and flux SQUID periodicities are correct',()=>{
- near(evaluate('josephson',1).value,483.5978484);
+ near(evaluate('josephson',1).value,.4835978484);
  near(evaluate('squid',0).value,1);
  near(evaluate('squid',.5).value,0);
  near(evaluate('squid',1).value,1);

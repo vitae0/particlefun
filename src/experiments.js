@@ -14,7 +14,7 @@ export const ADVANCED=Object.freeze([
  {id:'bell',group:'Kuantum temelleri',name:'Bell–CHSH singlet',year:'1964',param:'Görünürlük V',min:0,max:1,step:.02,value:1,unit:'',detail:'Singlet E(a,b)=−V cos(a−b), ideal CHSH |S|=2√2 V. Bell yerel sınır |S|≤2.'},
  {id:'tunnel',group:'Kuantum aygıtları',name:'Kuantum tünelleme',year:'1928',param:'Bariyer genişliği · nm',min:.05,max:1.8,step:.05,value:.5,unit:'nm',detail:'1 eV elektron, 2 eV dikdörtgen bariyer, 1B durağan Schrödinger denkleminin tam T katsayısı.'},
  {id:'squid',group:'Kuantum aygıtları',name:'DC SQUID',year:'1964',param:'Akı · Φ/Φ₀',min:0,max:2,step:.025,value:.5,unit:'Φ₀',detail:'Simetrik, düşük özindüktanslı DC SQUID: I_c(Φ)=2I₀ |cos(πΦ/Φ₀)|. Termal gürültü ve asimetri yok.'},
- {id:'josephson',group:'Kuantum aygıtları',name:'AC Josephson',year:'1962',param:'Gerilim · μV',min:0,max:100,step:2,value:20,unit:'μV',detail:'Josephson ilişkisi f=2eV/h, 1 μV ↔ 483.59785 MHz. İdeal, kilitlenmesiz bağlantı.'},
+ {id:'josephson',group:'Kuantum aygıtları',name:'AC Josephson',year:'1962',param:'Gerilim · μV',min:0,max:100,step:2,value:20,unit:'μV',detail:'Josephson ilişkisi f=2eV/h, 1 μV ↔ 0.48359785 MHz. İdeal, kilitlenmesiz bağlantı.'},
  {id:'rabi',group:'Kuantum aygıtları',name:'Rabi osilasyonu',year:'1937',param:'Detuning · MHz',min:0,max:20,step:.5,value:2,unit:'MHz',detail:'İdeal sürülen iki seviyeli sistem: P_e(t)=Ω²/(Ω²+Δ²) sin²(√(Ω²+Δ²)t/2). Ω/(2π)=5 MHz, bozunma yok.'},
  {id:'ramsey',group:'Kuantum aygıtları',name:'Ramsey interferometrisi',year:'1949',param:'Detuning · kHz',min:-200,max:200,step:10,value:50,unit:'kHz',detail:'İdeal iki π/2 darbesi, 10 μs bekleme: P_e=(1+cos(2π δT))/2. Dekohorans yok.'},
  {id:'hom',group:'Kuantum optiği',name:'Hong–Ou–Mandel',year:'1987',param:'Gecikme · ps',min:-4,max:4,step:.1,value:.3,unit:'ps',detail:'İki özdeş tek-foton Gauss modu için normalleştirilmiş çakışma P_c=½[1−exp(−δt²/(2τ²))], τ=1 ps.'},
@@ -85,7 +85,7 @@ export function evaluate(id,param){
    domain=[0,2];sampleCurve=z=>Math.abs(Math.cos(PI*z));break;
  }
  case 'josephson':{
-   value=483.5978484*p;unit='MHz';
+   value=.4835978484*p;unit='MHz';
    domain=[0,100];sampleCurve=z=>z/100;
    description='Josephson salınım frekansı '+value.toFixed(2)+' MHz';break;
  }
