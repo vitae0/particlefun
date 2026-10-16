@@ -32,6 +32,33 @@ export class Apparatus {
   const prev=before.find(a=>a.id===p.id);if(!prev)return false;
   return (prev.x<x&&p.x>=x)||(prev.x>x&&p.x<=x);
  }
+ // Exact straight-line time-of-flight shortcut ONLY for free neutral photons.
+ // This avoids billions of microscopic steps for optical devices. It does
+ // not bypass charged-particle forces, detector sampling or physical time.
+ fastForward(){
+  const packets=this.lab.fields;
+  if(!packets.length||packets.some(p=>p.type!=='photon'))return null;
+  const planes=this.devices.filter(d=>['screen','slits','photoelectric','interferometer'].includes(d.kind));
+  let closest=null;
+  for(const p of packets){
+   const E=energy(p),vx=p.px/E;
+   if(Math.abs(vx)<1e-12)continue;
+   for(const d of planes){
+    const t=(d.x-p.x)/vx;
+    if(t>1e-9&&Number.isFinite(t)&&(!closest||t<closest.dt))closest={dt:t,device:d};
+   }
+  }
+  if(!closest)return null;
+  const before=packets.map(p=>({id:p.id,x:p.x,y:p.y,z:p.z||0}));
+  for(const p of packets){
+   const E=energy(p);p.x+=p.px/E*closest.dt;p.y+=p.py/E*closest.dt;
+   p.z=(p.z||0)+(p.pz||0)/E*closest.dt;
+   p.phase=((p.phase-E*closest.dt/HC)%(2*Math.PI));
+  }
+  this.lab.clock+=closest.dt;
+  this.afterStep(before,closest.dt);
+  return {dt:closest.dt,device:closest.device,hits:this.hits};
+ }
  afterStep(before,dt){
   for(const d of this.devices){
    if(d.kind==='screen'||d.kind==='chamber'){
