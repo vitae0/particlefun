@@ -58,20 +58,22 @@ export class Transport3D {
   }
   for(let i=0;i<ps.length;i++){
    const p=ps[i],q=SPECIES[p.type].charge;
-   for(let k=0;k<3;k++)fs[i][k]+=q*ELECTRIC_COEFF*this.E[k];
-   if(this.gradientTPerM && p.spinProjection!==undefined){
+   const local=this.lab.apparatus?.fieldAt(p)||{E:[0,0,0],B:[0,0,0],grad:0};
+   for(let k=0;k<3;k++)fs[i][k]+=q*ELECTRIC_COEFF*(this.E[k]+local.E[k]);
+   if((this.gradientTPerM||local.grad) && p.spinProjection!==undefined){
      // μz = ±g_s μB/2. For electron g≈2, μB=5.7883818e-11 MeV/T.
      // ∇B in Tesla/m converted to Tesla/fm.
-     fs[i][1]+=p.spinProjection*5.7883817982e-11*this.gradientTPerM*1e-15;
+     fs[i][1]+=p.spinProjection*5.7883817982e-11*(this.gradientTPerM+local.grad)*1e-15;
    }
   }
   return fs;
  }
  boris(p,dt){
   const q=SPECIES[p.type].charge;
-  if(!q||!this.B.some(Boolean))return;
+  const B=this.B.map((v,i)=>v+(this.lab.apparatus?.fieldAt(p).B[i]||0));
+  if(!q||!B.some(Boolean))return;
   const E=energy(p), coeff=q*MAGNETIC_COEFF*dt/(2*E);
-  const t=this.B.map(v=>v*coeff),t2=t.reduce((s,x)=>s+x*x,0);
+  const t=B.map(v=>v*coeff),t2=t.reduce((s,x)=>s+x*x,0);
   const s=t.map(v=>2*v/(1+t2));
   const pMinus=[p.px,p.py,p.pz||0];
   const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -86,7 +88,8 @@ export class Transport3D {
   for(let i=0;i<ps.length;i++){
    const p=ps[i],E=energy(p),f=Math.hypot(...fs[i]),v=unit(p);
    if(f)dt=Math.min(dt,Math.sqrt(.12*this.softeningFm*E/f));
-   if(B&&SPECIES[p.type].charge)dt=Math.min(dt,.12*E/(Math.abs(SPECIES[p.type].charge)*MAGNETIC_COEFF*B));
+   const localB=Math.hypot(...(this.lab.apparatus?.fieldAt(p).B||[0,0,0]));
+   if(B+localB&&SPECIES[p.type].charge)dt=Math.min(dt,.12*E/(Math.abs(SPECIES[p.type].charge)*MAGNETIC_COEFF*(B+localB)));
    for(let j=i+1;j<ps.length;j++){
     const b=ps[j],w=unit(b);
     const r=Math.max(this.softeningFm,Math.hypot(p.x-b.x,p.y-b.y,(p.z||0)-(b.z||0)));
@@ -98,6 +101,7 @@ export class Transport3D {
  }
  integrate(dt){
   const ps=this.lab.fields,f0=this.forces();
+  const before=ps.map(p=>({id:p.id,x:p.x,y:p.y,z:p.z||0}));
   for(let i=0;i<ps.length;i++){
    const p=ps[i];
    p.px+=f0[i][0]*dt*.5;p.py+=f0[i][1]*dt*.5;
@@ -114,6 +118,7 @@ export class Transport3D {
    ps[i].pz+=f1[i][2]*dt*.5;
   }
   this.lab.clock+=dt;
+  this.lab.apparatus?.afterStep(before,dt);
  }
  advance(dt){
   let remaining=Math.max(0,Number(dt)||0);
