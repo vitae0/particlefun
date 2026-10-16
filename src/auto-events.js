@@ -94,11 +94,11 @@ const clamp01=x=>Math.max(0,Math.min(1,x));
 export class AutomaticEvents {
  constructor(lab,random=Math.random){
   this.lab=lab;this.random=random;this.mode='sample';
-  this.decays=new Map();this.exposure=new Set();this.precisionStep=.35;
+  this.decays=new Map();this.exposure=new Set();this.encounters=new Map();this.precisionStep=.35;
   this.observations=[];this.trials=0;this.hits=0;
   this.unresolved=[];
  }
- reset(){this.decays.clear();this.exposure.clear();this.observations=[];this.unresolved=[];this.trials=0;this.hits=0;}
+ reset(){this.decays.clear();this.exposure.clear();this.encounters.clear();this.observations=[];this.unresolved=[];this.trials=0;this.hits=0;}
  log(label,extra={}){
    const record={t:this.lab.clock,label,...extra};
    this.observations.unshift(record);this.observations.length=Math.min(90,this.observations.length);
@@ -146,6 +146,7 @@ export class AutomaticEvents {
  }
  collisions(dt){
   const parts=this.lab.fields;
+  const inRange=new Set();
   // The 3D packet model assumes no relative offset in the unshown z-axis.
   // One-packet overlap is a model of two single-particle wavepackets, not a dense beam.
   for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
@@ -157,29 +158,37 @@ export class AutomaticEvents {
    // Every time increment samples its own Poisson hazard. A single crossing
    // integrates the hazard across the full encounter, not only the first edge.
    if(!cs.length)continue;
+   inRange.add(key);
+   const track=this.encounters.get(key)||{survival:1,model:cs.map(x=>x.id).join(', ')};
+   this.encounters.set(key,track);
    const speed=moller(a,b),density=threeDOverlap(a,b,this.lab.packetSigma);
    const rates=cs.map(c=>({...c,rate:c.sigma*speed*density}));
    const total=rates.reduce((s,c)=>s+c.rate,0);
    const prob=clamp01(1-Math.exp(-total*Math.max(dt,0)));
    this.trials++;
-   if(this.mode==='expected'){
-      this.log('Beklenen P = '+(100*prob).toPrecision(3)+'% · '+rates.map(x=>x.id).join(' / '),
-       {prob,expected:true});continue;
-   }
-   if(this.random()>=prob){
-      this.log('Geçiş yok · P='+(100*prob).toPrecision(3)+'% ('+rates.map(x=>x.id).join(', ')+')',
-       {prob,noEvent:true});continue;
-   }
+   track.survival*=1-prob;
+   if(this.mode==='expected')continue;
+   if(this.random()>=prob)continue;
    let u=this.random()*total,chosen=rates[rates.length-1];
    for(const c of rates){u-=c.rate;if(u<=0){chosen=c;break;}}
    try{
      this.exposure.add(key);
      const result=this.lab.react(chosen.id,[a.id,b.id]);
      this.hits++;
+     this.encounters.delete(key);
      this.log('Otomatik çarpışma · '+result.record.label,
        {prob,crossSection:chosen.sigma,model:chosen.model,error:result.record.error,kind:'collision'});
      return true;
    }catch(e){this.log('Çarpışma reddedildi: '+e.message,{blocked:true});}
+  }
+  // Report one integrated Bernoulli outcome after an encounter, not dozens
+  // of identical per-time-step no-event messages.
+  for(const [key,track] of this.encounters){
+    if(inRange.has(key))continue;
+    const prob=1-track.survival;
+    this.log(this.mode==='expected'?'Beklenen karşılaşma P='+(100*prob).toPrecision(3)+'%':'Karşılaşma: olay yok; toplam P='+(100*prob).toPrecision(3)+'%',
+      {prob,noEvent:this.mode!=='expected',expected:this.mode==='expected'});
+    this.encounters.delete(key);
   }
   return false;
  }
@@ -190,7 +199,7 @@ export class AutomaticEvents {
   let left=elapsed;
   // Subdivide around short-lived decays, but never manufacture a fixed event.
   let steps=0;
-  while(left>0&&steps++<128){
+  while(left>0&&steps++<512){
     const next=this.nextDue();
     const before=next?Math.max(0,next.due-this.lab.clock):Infinity;
     const chunk=Math.min(left,before,this.precisionStep||0.35);
