@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a0e17">
+  <meta name="description" content="Gerçek parçacık sabitleriyle etkileşimli fizik laboratuvarı: parçacık, dalga paketi, tek-parçacık kuantum alanı.">
+  <title>ParticleFun | Physics Lab</title>
+  <link rel="stylesheet" href="./src/styles.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <div><strong>particle<span>fun</span></strong><small>INTERACTIVE PHYSICS LAB</small></div>
+    </div>
+    <div class="top-meta"><span class="meta-dot"></span><span>Yerel simülasyon</span><span class="separator"></span><a href="https://github.com/vitae0/particlefun" target="_blank" rel="noopener noreferrer">Kaynak kodu ↗</a></div>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel left-panel" aria-label="Simülasyon araçları">
+      <div class="panel-heading"><div><span class="eyebrow">01 / LABORATUVAR</span><h2>Parçacık yerleştir</h2></div></div>
+      <form id="addForm">
+        <label for="species">Parçacık türü</label>
+        <select id="species" name="species">
+          <option value="electron">Elektron · e⁻</option>
+          <option value="positron">Pozitron · e⁺</option>
+          <option value="proton">Proton · p⁺</option>
+          <option value="neutron">Nötron · n</option>
+          <option value="muon">Müon · μ⁻</option>
+          <option value="alpha">Alfa çekirdeği · α²⁺</option>
+        </select>
+        <div id="speciesFacts" class="species-facts" aria-live="polite"></div>
+        <div class="input-heading">Konum <span>nanometre (nm)</span></div>
+        <div class="two-cols"><label>X <input id="inputX" type="number" step="0.5" value="-6" required></label><label>Y <input id="inputY" type="number" step="0.5" value="0" required></label></div>
+        <div class="input-heading">İlk hız <span>km/s</span></div>
+        <div class="two-cols"><label>V<sub>x</sub> <input id="inputVx" type="number" step="10" value="0" required></label><label>V<sub>y</sub> <input id="inputVy" type="number" step="10" value="200" required></label></div>
+        <button class="primary-btn" type="submit">＋ Parçacık ekle</button>
+        <button class="secondary-btn" id="placeMode" type="button" aria-pressed="false">◎ Tuvale tıklayarak yerleştir</button>
+        <div class="microcopy">Tıklayarak seçebilir, yukarıdan ilk hızını değiştirebilirsin. Işık hızı aşılmaz.</div>
+      </form>
+
+      <div class="divider"></div>
+      <div class="panel-heading compact"><div><span class="eyebrow">02 / ORTAM</span><h2>Fizik parametreleri</h2></div></div>
+      <div class="control-row"><label for="bField">Dış manyetik alan B<sub>z</sub></label><output id="bValue" for="bField">0 T</output></div>
+      <input id="bField" type="range" min="-4000" max="4000" value="0" step="50">
+      <div class="control-row"><label for="softening">Coulomb yumuşatma</label><output id="softValue" for="softening">0.20 nm</output></div>
+      <input id="softening" type="range" min="0.05" max="0.8" step="0.05" value="0.2">
+      <div class="control-row"><label for="packetWidth">Dalga paketi σ₀</label><output id="sigmaValue" for="packetWidth">0.90 nm</output></div>
+      <input id="packetWidth" type="range" min="0.25" max="3" step="0.05" value="0.9">
+      <label class="check-line"><input type="checkbox" id="showE" checked><span>Elektrik alan vektörlerini göster</span></label>
+      <label class="check-line"><input type="checkbox" id="showTrails" checked><span>Hareket izlerini göster</span></label>
+    </aside>
+
+    <section class="stage" aria-label="Simülasyon">
+      <div class="stage-intro"><div><span class="eyebrow">SIMULATION WORKSPACE / 2D KESİT</span><h1>Maddenin üç görünümü.</h1><p>Tek fiziksel durum, üç farklı temsil.</p></div><div class="stage-badge"><span class="pulse"></span> MODEL · APPROXIMATION</div></div>
+      <div class="mode-switch" role="group" aria-label="Gösterim biçimi">
+        <button type="button" class="mode-btn active" data-mode="particle" aria-pressed="true"><span class="mode-icon">●</span><span>Parçacık</span><small>Yörüngeler / kuvvet</small></button>
+        <button type="button" class="mode-btn" data-mode="wave" aria-pressed="false"><span class="mode-icon wave-icon">〰</span><span>Dalga</span><small>Olasılık yoğunluğu</small></button>
+        <button type="button" class="mode-btn" data-mode="field" aria-pressed="false"><span class="mode-icon">◈</span><span>Kuantum alanı</span><small>Tek-parçacık sektörü</small></button>
+      </div>
+      <div class="viewport-wrap">
+        <canvas id="labCanvas" tabindex="0" role="img" aria-label="Parçacıkların etkileşimlerini gösteren etkileşimli 2B simülasyon tuvali"></canvas>
+        <div class="viewport-label top-left" id="canvasModeLabel">CLASSICAL ELECTRODYNAMICS / SOFTENED</div>
+        <div class="viewport-label top-right" id="canvasStatus">● HAZIR</div>
+        <div class="viewport-label bottom-left" id="scaleBadge">5 nm ölçek</div>
+        <div class="viewport-label bottom-right" id="countBadge">0 PARTICLES</div>
+      </div>
+      <p class="mode-explanation" id="modeExplanation" aria-live="polite">Yörüngeler, relativistik momentum ve yumuşatılmış Coulomb kuvvetiyle hesaplanır. Elektromanyetik yayılım ve radyasyon hesaba katılmaz.</p>
+      <div class="transport">
+        <button id="playPause" class="play-btn" type="button" aria-label="Simülasyonu duraklat">Ⅱ</button>
+        <button id="step" class="transport-btn" type="button" title="0.25 fs ilerlet">+0.25 fs</button>
+        <button id="restart" class="transport-btn" type="button">↺ Sahneyi sıfırla</button>
+        <div class="transport-spacer"></div>
+        <label for="simSpeed">Hız</label><select id="simSpeed" aria-label="Zaman akışı hızı"><option value="0.25">0.25×</option><option value="1" selected>1×</option><option value="4">4×</option></select>
+      </div>
+      <div class="metrics" aria-live="off">
+        <div><span>SIMÜLASYON ZAMANI</span><strong id="timeMetric">0.00 <small>fs</small></strong></div>
+        <div><span>TOPLAM ENERJİ</span><strong id="energyMetric">0.000 <small>eV</small></strong></div>
+        <div><span>ENERJİ SAPMASI</span><strong id="driftMetric">0.00 <small>%</small></strong></div>
+      </div>
+      <div class="presets"><span class="eyebrow">HAZIR DENEYLER</span><div class="preset-buttons">
+        <button type="button" data-preset="hydrogen">e⁻ + p⁺</button>
+        <button type="button" data-preset="repel">Elektron saçılması</button>
+        <button type="button" data-preset="pair">e⁻ / e⁺</button>
+        <button type="button" data-preset="magnetic">Manyetik sapma</button>
+        <button type="button" data-preset="empty">Boş sahne</button>
+      </div></div>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <aside class="panel right-panel" aria-label="Ölçümler ve parçacıklar">
+      <div class="panel-heading"><div><span class="eyebrow">03 / ÖLÇÜM</span><h2>Seçili parçacık</h2></div></div>
+      <div id="selectedDetails" class="selected-details" aria-live="polite"><p>Bilgi görmek için bir parçacık seç.</p></div>
+      <div class="selected-actions">
+        <button type="button" id="applyVelocity" class="secondary-btn">↗ Hızı uygula</button>
+        <button type="button" id="removeParticle" class="danger-btn">Seçileni sil</button>
+      </div>
+      <div class="divider"></div>
+      <div class="panel-heading compact"><div><span class="eyebrow">04 / SİSTEM</span><h2>Parçacıklar ve ilişkileri</h2></div></div>
+      <div id="particleList" class="particle-list" aria-label="Mevcut parçacıklar"></div>
+      <div id="interactions" class="interactions"></div>
+      <div class="divider"></div>
+      <div class="model-notes">
+        <div class="notes-title">◬ Model kapsamı</div>
+        <p>Alan görünümü, tam kuantum elektrodinamiği (QED) değildir. Tek-parçacık Schrödinger alan genliği ve klasik elektrik alanı birlikte görselleştirilir.</p>
+        <a href="https://github.com/vitae0/particlefun/blob/main/README.md" target="_blank" rel="noopener noreferrer">Denklemler ve sınırlar ↗</a>
+      </div>
+    </aside>
+  </main>
+  <footer class="footer"><span>PARTICLEFUN · CALCULATED, NOT FAKED.</span><span>CODATA 2022 · SI UNITS · OPEN SOURCE</span></footer>
+</div>
+</body>
+</html>
