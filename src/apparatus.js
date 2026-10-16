@@ -37,6 +37,10 @@ export class Apparatus {
  // not bypass charged-particle forces, detector sampling or physical time.
  fastForward(){
   const packets=this.lab.fields;
+  if(packets.length&&packets.every(p=>p.type==='oil')&&this.devices.some(d=>d.kind==='oilDrop'))
+    return this.advanceOilDrop();
+  if(packets.length&&packets.every(p=>p.type==='silver')&&this.devices.some(d=>d.kind==='spinmagnet'))
+    return this.advanceSpinBeamline();
   if(!packets.length||packets.some(p=>p.type!=='photon'))return null;
   const planes=this.devices.filter(d=>['screen','slits','photoelectric','interferometer'].includes(d.kind));
   let closest=null;
@@ -58,6 +62,66 @@ export class Apparatus {
   this.lab.clock+=closest.dt;
   this.afterStep(before,closest.dt);
   return {dt:closest.dt,device:closest.device,hits:this.hits};
+ }
+
+ // SI Stokes limit: m dv/dt = qE - mg - 6πηrv (low Reynolds number).
+ // The analytical result advances measured physical time without discretizing
+ // ~10²¹ fm/c into microscopic particle-collision time steps.
+ advanceOilDrop(){
+  const d=this.devices.find(d=>d.kind==='oilDrop');
+  if(!d)return null;
+  const seconds=d.stepSeconds||.01,r=d.radiusM||.5e-6;
+  const eta=d.viscosity||1.81e-5,rho=d.density||900;
+  const mass=(4/3)*Math.PI*r**3*rho,drag=6*Math.PI*eta*r;
+  const charge=-1.602176634e-19,E=d.E_Vm||0;
+  const vTerminal=(charge*E-mass*(d.g||9.81))/drag;
+  const tau=mass/drag,ex=Math.exp(-seconds/tau);
+  for(const p of this.lab.fields){
+   const v0=p.vY_SI||0;
+   const dy=vTerminal*seconds+(v0-vTerminal)*tau*(-Math.expm1(-seconds/tau));
+   const v1=vTerminal+(v0-vTerminal)*ex;
+   p.y+=dy*1e15;p.py=SPECIES[p.type].mass*v1/299792458;
+   p.vY_SI=v1;
+   this.hits.unshift({kind:'millikan',dyM:dy,velocityMs:v1,clock:this.lab.clock+seconds*299792458*1e15});
+  }
+  this.lab.clock+=seconds*299792458*1e15;
+  this.hits.length=Math.min(this.hits.length,300);
+  return {dt:seconds*299792458*1e15,device:d,hits:this.hits};
+ }
+ // Paraxial Stern-Gerlach flight model for a neutral silver beam.
+ // The magnetic field gradient acts on a measured ±μ_B spin projection.
+ // Analytic integration of piecewise constant force, with p_x/E ~ constant.
+ // Valid when |Δp_y| << |p_x|, no intermediate quantum measurement.
+ advanceSpinBeamline(){
+  const screen=this.devices.find(d=>d.kind==='screen');
+  if(!screen)return null;
+  const before=this.lab.fields.map(p=>({id:p.id,x:p.x,y:p.y,z:p.z||0}));
+  let time=Infinity;
+  for(const p of this.lab.fields){
+   const vx=p.px/energy(p),dt=(screen.x-p.x)/vx;
+   if(!(dt>0&&Number.isFinite(dt)))return null;
+   time=Math.min(time,dt);
+  }
+  for(const p of this.lab.fields){
+   const E=energy(p),vx=p.px/E,dt=(screen.x-p.x)/vx;
+   const initialPy=p.py,pyz=p.pz||0;
+   let displacement=initialPy/E*dt,deltaPy=0;
+   for(const d of this.devices.filter(d=>d.kind==='spinmagnet')){
+     const x1=(d.box.x||0)-(d.box.w||0)/2,x2=(d.box.x||0)+(d.box.w||0)/2;
+     const t1=Math.max(0,Math.min(dt,(x1-p.x)/vx)),t2=Math.max(0,Math.min(dt,(x2-p.x)/vx));
+     if(t2<=t1)continue;
+     const F=(p.spinProjection||1)*5.7883817982e-11*(d.gradient||0)*1e-15;
+     displacement+=F/(2*E)*((dt-t1)**2-(dt-t2)**2);
+     deltaPy+=F*(t2-t1);
+   }
+   p.x=screen.x;p.y+=displacement;
+   p.z=(p.z||0)+pyz/E*dt;
+   p.py+=deltaPy;
+   p.phase=((p.phase||0)-E*dt/HC)%(2*Math.PI);
+  }
+  this.lab.clock+=time;
+  this.afterStep(before,time);
+  return {dt:time,device:screen,hits:this.hits,approximation:'paraxial spin force'};
  }
  afterStep(before,dt){
   for(const d of this.devices){
