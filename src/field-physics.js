@@ -180,10 +180,10 @@ export class FieldLab {
     if(!status.ok)throw new Error(status.reason);
     const initial=particles.map(four);
     const output=sampleFinalState(particles,ch.final,this.random);
-    const location=particles.reduce((s,p)=>({x:s.x+p.x/particles.length,y:s.y+p.y/particles.length}),{x:0,y:0});
+    const location=particles.reduce((s,p)=>({x:s.x+p.x/particles.length,y:s.y+p.y/particles.length,z:s.z+(p.z||0)/particles.length}),{x:0,y:0,z:0});
     const oldIds=new Set(particles.map(p=>p.id));
     this.fields=this.fields.filter(p=>!oldIds.has(p.id));
-    const created=output.map((v,i)=>this.fromFour(ch.final[i],v,location.x,location.y));
+    const created=output.map((v,i)=>this.fromFour(ch.final[i],v,location.x,location.y,location.z));
     const record={t:this.clock,label:ch.label,initial:ch.initial,final:ch.final,
       error:fourError(initial,output),x:location.x,y:location.y};
     this.events.unshift(record);this.events.length=Math.min(50,this.events.length);
