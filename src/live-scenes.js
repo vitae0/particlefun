@@ -39,8 +39,8 @@ const basic=[
   [E('Saptırma plakaları',[0,1e6,0],{x:0,w:1e14,h:1e14,depth:1e14}),S(1.2e14,'Fosfor ekran')],
   '10 cm fiziksel uçuş ve 1 MV/m plaka alanı. RK4; fosforlu malzeme ışımaları yok.'],
  ['millikan','Millikan yağ damlası (1911)','Tarihsel',[f('oil',0,0,0)],
-  [{kind:'oilDrop',name:'İki elektrot, Stokes damlası',E_Vm:-30000,radiusM:.5e-6,density:900,viscosity:1.81e-5,g:9.81}],
-  'Gerçek damla kütlesi, qE−mg ve Stokes sürüklemesi. ⏭ ile fiziksel 10 ms öteleme yapılır; Brown hareketi hariçtir.'],
+  [{kind:'oilDrop',name:'İki elektrot, Stokes damlası',E_Vm:-45000,radiusM:.5e-6,density:900,viscosity:1.81e-5,g:9.81}],
+  'q=−e, E=−45 kV/m, g=9.81 m/s², Stokes sürüklemesi. ⏭ ile fiziksel 10 ms uçuşu. Brown hareketi ve buharlaşma dahil değil.'],
  ['lorentz-e','Manyetik elektron eğrisi','Manyetik',[f('e',.12,-12,0)], [B('Bz magnet',[0,0,5e10],{x:0,w:100,h:100,depth:100})],
   'Relativistik Lorentz kuvveti ve 3B manyetik Boris döndürme.'],
  ['lorentz-p','Proton manyetik yörüngesi','Manyetik',[f('p',.8,-12,0)],[B('Bz magnet',[0,0,5e10],{x:0,w:100,h:100,depth:100})],
@@ -117,6 +117,15 @@ export const LIVE_SCENES = Object.freeze([
  scale:id==='millikan'?2e10:id.startsWith('stern')?2.4e14:['thomson','crt','wien','spectrometer'].includes(id)?3e14:group==='Kuantum optik'&&id.startsWith('young')?3e12:group==='Kuantum optik'?90:105,
  step:id==='millikan'?3e21:id.startsWith('stern')?5e18:['thomson','crt','wien','spectrometer'].includes(id)?1e13:group==='Kuantum optik'&&id.startsWith('young')?50000:.25,
  softening:group==='Coulomb'?.25:.4,
+ })),
+ ...[-28580,25000,-45000].map((e,i)=>({
+ id:['oil-balance','oil-fall','oil-rise'][i],
+ title:['Millikan: kuvvet dengesi','Millikan: düşen damla','Millikan: yükselen damla'][i],
+ group:'Tarihsel',
+ description:'Tek elektron yüklü yağ damlası; gerçek SI damla kütlesi, E, g ve Stokes sürüklemesi. ⏭ 10 ms.',
+ beams:[f('oil',0,0,0)],
+ devices:[{kind:'oilDrop',name:'Millikan E-plates',E_Vm:e,radiusM:.5e-6,density:900,viscosity:1.81e-5,g:9.81}],
+ scale:2e10,step:3e21,softening:.4
  })),
  ...legacy.map(p=>({
  id:'sm-'+p.id,title:p.name,group:'Standart Model',description:p.description,
