@@ -171,7 +171,8 @@ function fillPanel(){
   ];
   renderPages(docs,d=>makeButton(d[0],'Fiziksel varsayımlar ve sınırlamalar',()=>{
     inform(d[1]);
-    const p=textLine(d[1],'doc');root.append(p);
+    const tip=root.querySelector('.tip');
+    if(tip)tip.textContent=d[1];
   }));
   root.append(textLine('Kaynak kodu ve denklemler: github.com/vitae0/particlefun','tip'));
   $('pageStatus').textContent=(page+1)+' / '+Math.ceil(docs.length/ITEMS_PER_PAGE());
@@ -187,7 +188,13 @@ function loadPreset(id){
  }
  events.synchronize();
  setTitle('STANDART MODEL / TEMEL',p.name,p.description);
- inform(p.channel?'Otomatik olasılık örneklemesi açık. Seçilen ürünler garanti değil; bilinen kanallar üzerinden fiziksel ağırlıklar kullanılıyor.':'Alan paketi deney düzeneği hazır.');
+ if(p.channel&&lab.fields.length===2){
+   const options=crossSections(...lab.fields);
+   if(!options.length)inform('Bu düzeneğin otomatik hesaplanabilen bir çarpışma tesir kesiti yok veya enerji eşiği sağlanmıyor. Bu nedenle uydurma olay üretilmez.',true);
+   else inform('Hesaplanan kanallar: '+options.map(x=>x.id+' · σ='+pretty(x.sigma)+' fm²').join('; ')+'. Sonuçlar rastlantısaldır.');
+ }else if(p.channel&&lab.fields.length===1)
+   inform('Bozunma, ölçülmüş doğal ömür ve mevcut dallanma oranları ile otomatik örneklenir. Çok uzun ömürlerde “Son bozunma”yı kullan.');
+ else inform('Alan paketi deney düzeneği hazır.');
  running=true;updateRunning();legend();updateFeedback();clearPanel();
 }
 function loadAdvanced(id){
