@@ -121,10 +121,10 @@ export function eligibleChannels(particles) {
 export class FieldLab {
   constructor(random=Math.random){
     this.random=random;this.fields=[];this.sources=[];this.events=[];this.clock=0;this.id=1;
-    this.widthFm=26;this.channel=null;this.autoCollision=false;this.packetSigma=2.1;this.transport=null;
+    this.widthFm=26;this.channel=null;this.autoCollision=false;this.packetSigma=2.1;this.transport=null;this.apparatus=null;
     this.completed=new Set();this.lastReaction=null;
   }
-  reset(){this.fields=[];this.sources=[];this.events=[];this.clock=0;this.id=1;this.completed.clear();this.lastReaction=null;this.channel=null;this.autoCollision=false;this.transport?.reset();}
+  reset(){this.fields=[];this.sources=[];this.events=[];this.clock=0;this.id=1;this.completed.clear();this.lastReaction=null;this.channel=null;this.autoCollision=false;this.transport?.reset();this.apparatus?.reset();}
   add(type,kineticMeV=4,angleDeg=0,x=0,y=0,z=0,elevationDeg=0){
     const s=SPECIES[type];if(!s)throw new Error('Bilinmeyen tür.');
     if(s.confined)throw new Error(s.name+': renk hapsi nedeniyle serbest durum olarak eklenemez. Hadron deneylerini kullan.');
