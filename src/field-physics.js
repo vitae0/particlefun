@@ -1,4 +1,5 @@
 import { HC, SPECIES, C, conserved } from './catalog.js';
+import { packetAt, packetGeometry } from './wavepacket.js';
 
 // Natural units: position fm, time fm/c, energy & momentum MeV (p in MeV/c).
 // Strict on-shell 4-momentum, no free colored states. 2D spatial slice.
@@ -155,22 +156,16 @@ export class FieldLab {
     this.fields.push(p);return p;
   }
   descriptions(){return this.fields.map(p=>({...p,...SPECIES[p.type],E:energy(p),speed: norm(p)/energy(p)}))}
+  // Display-only, normalized 3D single-particle narrow-band Gaussian.
+  // Not an interacting quantum-field computation.
   fieldValue(p,x,y,z=0){
-    const E=energy(p),m=SPECIES[p.type].mass;
-    const s0=this.packetSigma,delta=this.clock-p.birth;
-    // Paraxial relativistic scalar packet (not Dirac/Maxwell/Proca/QCD).
-    const gL=m*m/Math.pow(E,3),gT=1/E;
-    const l=HC*delta*gL/(2*s0*s0),t=HC*delta*gT/(2*s0*s0);
-    const sx=Math.max(s0,s0*Math.hypot(1,l)),sy=Math.max(s0,s0*Math.hypot(1,t));
-    const ux=norm(p)>0?p.px/norm(p):1,uy=norm(p)>0?p.py/norm(p):0,uz=norm(p)>0?(p.pz||0)/norm(p):0;
-    const dx=x-p.x,dy=y-p.y,dz=z-(p.z||0);
-    const longitudinal=dx*ux+dy*uy+dz*uz,transverse=Math.sqrt(Math.max(0,dx*dx+dy*dy+dz*dz-longitudinal*longitudinal));
-    const ampl=Math.exp(-.25*(longitudinal*longitudinal/(sx*sx)+transverse*transverse/(sy*sy)));
-    const chirp=.25*((l/(1+l*l))*longitudinal**2/s0**2+(t/(1+t*t))*transverse**2/s0**2);
-    // Phase evaluated around a moving centroid, with appropriate on-shell E.
-    const phase=(p.px*dx+p.py*dy+(p.pz||0)*dz)/HC+
-      chirp-.5*(Math.atan(l)+Math.atan(t))+p.phase;
-    return ampl*Math.cos(phase);
+    return packetAt(p,this.packetSigma,this.clock-p.birth,x,y,z).realAmplitude;
+  }
+  packetDensity(p,x,y,z=0){
+    return packetAt(p,this.packetSigma,this.clock-p.birth,x,y,z).probability;
+  }
+  packetGeometry(p){
+    return packetGeometry(p,this.packetSigma,this.clock-p.birth);
   }
   react(channelId,ids){
     const ch=reaction(channelId);
