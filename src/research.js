@@ -25,7 +25,8 @@ function timeText(){
  const val=t>299792458*1e15?(t/(299792458*1e15)).toPrecision(4)+' s':fmt(t)+' fm/c';
  $('simtime').textContent='t = '+val;
  const d=transport.last;
- const drift=transport.E.some(e=>e!==0)?'ΔE: dış E işi':('ΔE/E = '+fmt(d.energyDrift*100,3)+'%');
+ const nonconservative=transport.E.some(e=>e!==0)||apparatus.devices.some(x=>['plates','wien','trap','oilDrop','spinmagnet','photoelectric'].includes(x.kind));
+ const drift=nonconservative?'ΔE: dış alan / ölçüm kaynağı':('ΔE/E = '+fmt(d.energyDrift*100,3)+'%');
  $('diagnostic').textContent=drift+' · N='+lab.fields.length+' · 3B fizik / 2B kesit · '+(d.unconsumed>0?'adım limiti':'');
  const last=apparatus.hits[0];
  if(apparatus.hits.length>recordedHits&&last){recordedHits=apparatus.hits.length;
@@ -84,11 +85,21 @@ function stepForward(){
  if(!lab.fields.length){return;}
  remember();
  const requested=baseStep*speeds[speedIndex];
- const canOpticalFast=baseStep>=1000&&lab.fields.every(x=>x.type==='photon')&&apparatus.devices.some(x=>['slits','interferometer','photoelectric','screen'].includes(x.kind));
- if(canOpticalFast){
+ const fastInstrument=baseStep>=1000&&apparatus.devices.some(x=>['slits','interferometer','photoelectric','screen','oilDrop','spinmagnet'].includes(x.kind));
+ if(fastInstrument){
   const result=apparatus.fastForward();
-  if(result){events.synchronize();note('Foton aygıta ulaştı: Δt='+fmt(result.dt)+' fm/c; dedektör Born örneklemesi uygulandı.');}
-  else{const old=lab.clock;events.tick(Math.min(requested,2));if(lab.clock===old)note('Zaman-adımı sınırı.');}
+  if(result){
+   events.synchronize();
+   if(result.approximation==='paraxial spin force'){
+    const detectorY=lab.fields.map(p=>p.y);
+    plot.camera.x=result.device.x;
+    plot.camera.y=(Math.max(...detectorY)+Math.min(...detectorY))/2;
+    plot.camera.span=Math.max(3e11,3*(Math.max(...detectorY)-Math.min(...detectorY)));
+    updateZRange();
+   }
+   const label=result.approximation==='paraxial spin force'?'Spin-demet uçuşu (paraksiyel)':result.device.kind==='oilDrop'?'Millikan/Stokes damla hareketi':'Tek foton aygıt uçuşu';
+   note(label+': fiziksel Δt='+fmt(result.dt)+' fm/c.');
+  }else note('Bu düzenek için güvenilir analitik olay ilerletmesi bulunmuyor.');
  }else{
   const before=lab.clock;events.tick(Math.min(32,requested));
   const got=lab.clock-before;
