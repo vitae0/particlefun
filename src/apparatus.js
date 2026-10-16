@@ -77,70 +77,79 @@ export class Apparatus {
  advanceLorentzBeamline(){
   const detector=this.devices.find(d=>d.kind==='screen');
   if(!detector)return null;
-  const c=299792458,chargeUnit=299.792458; // (MeV/c)/s per V/m for q=e
-  let maxTime=0,integrated=0,allReached=true;
-  const before=this.lab.fields.map(p=>({id:p.id,x:p.x,y:p.y,z:p.z||0}));
-  for(const p of this.lab.fields){
-   const v0=p.px/energy(p)*c,dx=(detector.x-p.x)*1e-15;
-   if(!(dx/v0>0&&Number.isFinite(dx/v0)))return null;
-   maxTime=Math.max(maxTime,dx/v0);
+  const c=299792458,chargeUnit=299.792458;
+  const packets=this.lab.fields;
+  for(const p of packets){
+    const vx=p.px/energy(p)*c,dx=(detector.x-p.x)*1e-15;
+    if(!(dx/vx>0&&Number.isFinite(dx/vx)))return null;
   }
-  // Demonstrate only where 3D pair Coulomb is <10^-3 of applied field.
-  if(this.lab.fields.length>1){
-   for(let i=0;i<this.lab.fields.length;i++)for(let j=i+1;j<this.lab.fields.length;j++){
-    const a=this.lab.fields[i],b=this.lab.fields[j];
-    const sep=Math.hypot(a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0));
-    if(sep<1e11)return null;
-   }
+  // The instrument shortcut is valid only for dilute, separated beams where
+  // the mutual Coulomb force is negligible compared with external E/B.
+  if(packets.length>1){
+    for(let i=0;i<packets.length;i++)for(let j=i+1;j<packets.length;j++){
+      const a=packets[i],b=packets[j];
+      const r=Math.hypot(a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0));
+      if(r<1e11)return null;
+    }
   }
   const rhs=(type,u)=>{
     const E=Math.hypot(SPECIES[type].mass,u[3],u[4],u[5]);
-    const vel=[u[3]/E*c,u[4]/E*c,u[5]/E*c];
-    const at=this.fieldAt({x:u[0],y:u[1],z:u[2]});
-    const ex=at.E,bt=at.B,q=SPECIES[type].charge;
-    const cross=[
-      vel[1]*bt[2]-vel[2]*bt[1],
-      vel[2]*bt[0]-vel[0]*bt[2],
-      vel[0]*bt[1]-vel[1]*bt[0]
-    ];
-    return [...vel.map(x=>x*1e15),...cross.map((x,i)=>q*chargeUnit*(x+ex[i]))];
+    const v=[u[3]/E*c,u[4]/E*c,u[5]/E*c];
+    const field=this.fieldAt({x:u[0],y:u[1],z:u[2]});
+    const b=field.B,e=field.E,q=SPECIES[type].charge;
+    const cross=[v[1]*b[2]-v[2]*b[1],v[2]*b[0]-v[0]*b[2],v[0]*b[1]-v[1]*b[0]];
+    return [...v.map(x=>x*1e15),...cross.map((x,i)=>q*chargeUnit*(x+e[i]))];
   };
-  const advance=(type,u,h)=>{
-    const plus=(a,b,f)=>a.map((x,i)=>x+b[i]*f);
-    const k1=rhs(type,u),k2=rhs(type,plus(u,k1,h/2));
-    const k3=rhs(type,plus(u,k2,h/2)),k4=rhs(type,plus(u,k3,h));
+  const rk4=(type,u,h)=>{
+    const sum=(a,b,t)=>a.map((x,i)=>x+b[i]*t);
+    const k1=rhs(type,u),k2=rhs(type,sum(u,k1,h/2)),
+      k3=rhs(type,sum(u,k2,h/2)),k4=rhs(type,sum(u,k3,h));
     return u.map((x,i)=>x+h*(k1[i]+2*k2[i]+2*k3[i]+k4[i])/6);
   };
-  for(const p of this.lab.fields){
-    const charge=SPECIES[p.type].charge;
-    const startX=p.x,was=energy(p);
-    let u=[p.x,p.y,p.z||0,p.px,p.py,p.pz||0],t=0,steps=0;
-    const v=Math.max(1,Math.hypot(p.px,p.py,p.pz||0)/was*c);
+  const tracks=[];
+  for(const p of packets){
+    const charge=SPECIES[p.type].charge,initialEnergy=energy(p);
+    let u=[p.x,p.y,p.z||0,p.px,p.py,p.pz||0],t=0,steps=0,reached=false;
+    const v=Math.max(1,Math.hypot(p.px,p.py,p.pz||0)/initialEnergy*c);
     const estimate=Math.abs((detector.x-p.x)*1e-15)/v;
     const terminal=Math.max(estimate*12,1e-10);
     const Bmax=this.devices.reduce((m,d)=>Math.max(m,Math.hypot(...(d.B||[0,0,0]))),0);
-    const omega=Math.abs(charge)*299.792458*c*Math.max(Bmax,1e-20)/Math.max(1e-12,was);
-    // 1500 nominal time steps; reduce dt near strong magnetic precession.
+    const omega=Math.abs(charge)*chargeUnit*c*Math.max(Bmax,1e-20)/Math.max(1e-12,initialEnergy);
     const base=Math.min(estimate/1700,omega>0?.045/omega:estimate/1700);
+    const trail=[{x:u[0],y:u[1],z:u[2]}];
     while(steps++<18000&&t<terminal){
-      const beforeU=u,dt=Math.max(1e-17,Math.min(base,terminal-t));
-      const next=advance(p.type,u,dt);
-      u=next;t+=dt;
-      if((beforeU[0]-detector.x)*(next[0]-detector.x)<=0){
-       const frac=(detector.x-beforeU[0])/(next[0]-beforeU[0]||1);
-       u=beforeU.map((x,i)=>x+(next[i]-x)*frac);
-       t-=dt*(1-frac);break;
+      const old=u,dt=Math.max(1e-17,Math.min(base,terminal-t));
+      const next=rk4(p.type,u,dt);u=next;t+=dt;
+      if(steps%20===0)trail.push({x:u[0],y:u[1],z:u[2]});
+      if((old[0]-detector.x)*(u[0]-detector.x)<=0){
+        const frac=(detector.x-old[0])/(u[0]-old[0]||1);
+        u=old.map((x,i)=>x+(u[i]-x)*frac);
+        t-=dt*(1-frac);reached=true;break;
       }
     }
-    if((u[0]-detector.x)*(startX-detector.x)>0)allReached=false;
-    [p.x,p.y,p.z,p.px,p.py,p.pz]=u;
-    p.phase=((p.phase||0)-was*t*c*1e15/HC)%(2*Math.PI);
-    integrated=Math.max(integrated,t);
+    if(!reached)return null; // leave global state untouched; cannot infer result.
+    trail.push({x:u[0],y:u[1],z:u[2]});
+    tracks.push({p,u,t,trail,energy:initialEnergy});
   }
-  this.lab.clock+=integrated*c*1e15;
-  this.afterStep(before,integrated*c*1e15);
-  return {dt:integrated*c*1e15,device:detector,hits:this.hits,
-    approximation:allReached?'relativistic E/B RK4':'RK4: detector not reached'};
+  const elapsed=Math.max(...tracks.map(x=>x.t)),epoch=this.lab.clock;
+  for(const track of tracks){
+    const {p,u,t,trail}=track;
+    const remaining=Math.max(0,elapsed-t);
+    const E=Math.hypot(SPECIES[p.type].mass,u[3],u[4],u[5]);
+    // Detector is downstream of the modeled E/B regions. Past it, free drift.
+    p.x=u[0]+u[3]/E*c*remaining*1e15;
+    p.y=u[1]+u[4]/E*c*remaining*1e15;
+    p.z=u[2]+u[5]/E*c*remaining*1e15;
+    p.px=u[3];p.py=u[4];p.pz=u[5];
+    p.phase=((p.phase||0)-track.energy*elapsed*c*1e15/HC)%(2*Math.PI);
+    p.trail=[...trail,{x:p.x,y:p.y,z:p.z}].slice(-100);
+    this.hits.unshift({kind:'screen',device:detector.id,type:p.type,
+      clock:epoch+t*c*1e15,y:u[1],z:u[2]});
+  }
+  this.hits.length=Math.min(300,this.hits.length);
+  this.lab.clock+=elapsed*c*1e15;
+  return {dt:elapsed*c*1e15,device:detector,hits:this.hits,
+    approximation:'relativistic E/B RK4'};
  }
  // SI Stokes limit: m dv/dt = qE - mg - 6πηrv (low Reynolds number).
  // The analytical result advances measured physical time without discretizing
