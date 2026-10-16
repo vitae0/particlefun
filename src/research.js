@@ -129,7 +129,10 @@ function loadScene(id){
  $('kinetic').value=0;selectedSpecies='e';
  recordedHits=0;
  transport.reference=transport.totalEnergy();
- note(sc.description+' · Hazır / duraklatıldı.');
+ if(plot.display==='phase'||plot.display==='density'){
+   const corrected=lab.fields.filter(p=>lab.packetGeometry(p).substituted);
+   note(sc.description+' · Hazır / duraklatıldı.'+(corrected.length?' '+corrected.length+' paket için geçerli Gauss yaklaşımına σ₀ genişletildi.':''));
+ }else note(sc.description+' · Hazır / duraklatıldı. Klasik 3B Coulomb V gösteriliyor; elektronlarda sahte girişim halkaları çizilmiyor.');
  hidePopup();labels();plot.draw();
 }
 function addField(x=plot.camera.x,y=plot.camera.y){
@@ -192,6 +195,17 @@ function renderPopup(){
    opts.forEach(([v,name])=>{const o=document.createElement('option');o.value=v;o.textContent=name;s.append(o);});
    s.value=now;s.addEventListener('change',()=>callback(s.value));return s;
   };
+  label('Alan çizimi',select([
+   ['potential','Coulomb V (3B klasik)'],
+   ['density','|ψ|² (Gauss yaklaşık)'],
+   ['phase','Re ψ (faz tanısı)']
+  ],plot.display,v=>{
+    plot.display=v;plot.draw();
+    const corrected=lab.fields.filter(p=>lab.packetGeometry(p).substituted);
+    if(v!=='potential'&&corrected.length)
+      note(corrected.length+' pakette Δp/E<0.1 şartı için fiziksel σ₀ genişletildi; görünüm tam QFT değildir.');
+    else note(v==='potential'?'3B yüklere ait düzenlenmiş Coulomb potansiyeli çiziliyor.':'Tek-parçacık yaklaşık yoğunluğu / fazı çiziliyor.');
+  }));
   label('Renk skalası',select([['linear','lineer'],['log','log'],['exp','üstel']],plot.color,v=>{plot.color=v;plot.draw();}));
   label('Ekran örnekleme',select([['low','düşük'],['medium','orta'],['high','yüksek']],plot.quality,v=>{plot.quality=v;plot.draw();}));
   label('Kuvvet okları',select([['yes','açık'],['no','kapalı']],plot.vectors?'yes':'no',v=>{plot.vectors=v==='yes';plot.draw();}));
@@ -213,6 +227,7 @@ function renderPopup(){
     'Young çift yarık ve Mach–Zehnder, AYNI sahnede aygıt ve Born dedektörü kullanır; tam etkileşimli Maxwell-QFT çözücüsü değildir.',
     'Otomatik süreçler ancak tanımlı tesir kesiti veya ömür modeli varsa gerçekleşir. Nadir olayları hızlandırmak için fiziksel olasılık değiştirilmez.',
     'Pan: sürükle; zoom: tekerlek; z: alt sürgü; Space: başlat/durdur; sol ok: geri; sağ ok: ileri; ⏭: serbest fotonun aygıta ulaşımı.',
+    'Elektronda σ₀=2.1 fm fiziksel Gauss paket yaklaşımı için geçersizdi. Artık Δp/E≤0.1 şartında efektif σ₀ düzeltilir, |ψ|² normalize edilir; varsayılan çizim kuantum dalga halkaları DEĞİL klasik 3B Coulomb V potansiyelidir.',
     'Coulomb yumuşatma, tek-parçacık Gauss gösterimi ve cihazların ideal alan bölgeleri model yaklaşımıdır. E/B çok büyük değerleri fiziksel aygıt ölçeğine göre seçilir.'
   ]){
    const p=document.createElement('p');p.className='note';p.textContent=msg;area.append(p);
