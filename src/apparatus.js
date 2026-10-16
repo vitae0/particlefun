@@ -119,7 +119,7 @@ export class Apparatus {
     const estimate=Math.abs((detector.x-p.x)*1e-15)/v;
     const terminal=Math.max(estimate*12,1e-10);
     const Bmax=this.devices.reduce((m,d)=>Math.max(m,Math.hypot(...(d.B||[0,0,0]))),0);
-    const omega=Math.abs(charge)*299.792458*c*Math.max(Bmax,1e-20)/Math.max(1,was*c);
+    const omega=Math.abs(charge)*299.792458*c*Math.max(Bmax,1e-20)/Math.max(1e-12,was);
     // 1500 nominal time steps; reduce dt near strong magnetic precession.
     const base=Math.min(estimate/1700,omega>0?.045/omega:estimate/1700);
     while(steps++<18000&&t<terminal){
