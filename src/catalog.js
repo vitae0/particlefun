@@ -72,6 +72,10 @@ item('silver','Ag · silver atom','hadron',100.905*931.49410372,0,
   {spin:.5,composite:true,colorHue:110});
 item('mercury','Hg · mercury atom','hadron',200.59*931.49410372,0,
   {spin:0,composite:true,colorHue:165});
+// Macroscopic effective object for the Millikan instrument, not an elementary field.
+item('oil','Oil droplet · q=−e','hadron',
+  (4/3)*Math.PI*(.5e-6)**3*900*(299792458**2)/1.602176634e-13,-1,
+  {spin:0,composite:true,model:'classical Stokes sphere, radius 0.5 µm',colorHue:78});
 export const SPECIES = Object.freeze(catalog);
 export const GROUPS = Object.freeze([
  ['lepton','Yüklü leptonlar'],['neutrino','Nötrinolar'],
