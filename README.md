@@ -1,8 +1,8 @@
-# ParticleFun · Field Laboratory
+# ParticleFun · One-screen Field Laboratory
 
-A deliberately minimal interface for exploring Standard Model **particle sectors, relativistic kinematics, overlapping single-particle field envelopes, conditional reactions, and conservation laws**.
+A one-screen, no-scroll physics sandbox for **Standard Model field-sector visualization, relativistic on-shell kinematics, naturally timed decays, QED cross-section-driven stochastic collisions**, and independent analytical historical / quantum-technology experiments.
 
-**Scientific status:** This is not a first-principles Standard Model quantum-field simulation. That would require nonperturbative QCD, quantum electroweak amplitudes, spin representations and/or event-generator infrastructure far beyond this browser-based model. What is computed is specified below. No arbitrary 2D animation is passed off as exact physics.
+> **Scientific scope:** This is **not** a first-principles, exact interacting Standard Model quantum field theory solver. The physics engine combines verified mass-shell and conservation calculations with a deliberately explicit semiclassical Gaussian wave-packet / beam-overlap approximation. Some partial cross sections are leading-order approximations; many channels remain unresolved. Results must not be treated as quantitative collider predictions.
 
 ## Run
 
@@ -10,122 +10,155 @@ A deliberately minimal interface for exploring Standard Model **particle sectors
 git clone https://github.com/vitae0/particlefun.git
 cd particlefun
 python3 -m http.server 8080
-# Visit http://localhost:8080
+# http://localhost:8080
 ```
 
-Zero third-party runtime dependencies. ES modules require HTTP, not `file://`. For regression tests: `npm test` (Node.js 20+). GitHub Actions runs syntax and physics tests on commits.
+No frontend build or third-party JS dependencies. Node.js 20+ for regression tests:
 
-## Interface
+```bash
+npm test
+```
 
-- One visualization: **overlapping color-coded quantum-sector packet amplitudes**. No particle/wave/field tabs, trajectories, absolute position labels or meter-heavy sidebar.
-- Choose species, initial kinetic energy in MeV (total energy for massless species), direction in degrees. Click **Ekle** to inject from the side, or click the canvas to choose the packet center without exposing numerical absolute coordinates.
-- Antiparticles are **exactly complementary hues** to their particle partners. Different species receive distinct color families. Clicking active field chips emphasizes a single field without hiding all others.
-- Choose among **29 named experiments** (QED, Breit–Wheeler, Møller/Bhabha/Compton, pair thresholds, electroweak decays, hadron decays, three-body decays and confinement limitations).
-- **Koşullu çarpışmalar:** selected 2→2 channel triggers only after compatible incoming packets overlap. The simulation never claims a cross section or reaction probability. One-particle decay channels require an explicit click.
-- Pause, one natural-time step, restart, clear and zoom are visible. A collapsible scientific-details panel holds limitations and assumptions.
+## One-page UI
 
-## Species inventory
+No body scrollbar or panel scrollbar. A single laboratory grid fills the browser, with **expand-on-click menus**: **Alan**, **Deneyler**, **İleri**, **Olaylar**, **Model**. Entries paginate instead of using hidden scrolling regions.
 
-**46 catalog items**, comprising:
-- Charged leptons e, μ, τ and all charge conjugates.
-- Three neutrino flavor labels and three anti-flavors. Flavor states are *not* mass eigenstates; this model approximates them as ultrarelativistic massless sectors.
-- All six quark flavors and antiquarks **for structural/reference purposes** (not free asymptotic particles).
-- Gauge bosons: photon, eight SU(3) gluon basis labels, W+, W−, Z. Higgs scalar.
-- Effective hadronic states: proton / antiproton, neutron / antineutron, π0, π± and K±.
+**Always visible:** slower, play/pause, faster, single-step, advance to next physically sampled decay, restart, world scale, numerical precision and color-intensity mapping. More options appear within the canvas without redirecting to another page.
 
-**Confinement matters.** Free color-charged quarks and gluons cannot be inserted or propagated as observable asymptotic particles, hence those menu options are present but disabled. Proton and pion fields are effective composite approximations. Free quark and gluon dynamics or hadronization would require a genuine QCD engine.
+- **Scales:** 1 fm → 1 km (including 1 nm, 1 μm, 1 mm, 1 m).
+- **Precision:** fast / balanced / precise. Controls packet rendering samples (108/185/320 pixels across) and kinetic substep target (1/0.35/0.08 fm/c respectively). **It does not turn an approximate QFT model into exact QFT.** Finite frame budgets can cap displayed physical-time progression.
+- **Colors:** linear `|A|`, logarithmic `log(1+16|A|)/log(17)`, exponential `|A|²`. These are *display mappings*, never modifications of quantum probability.
+- **Antimatter hues:** exact complementary 180° colors for every particle/antiparticle ID. Signed packet carrier uses hue-dependent tint without asserting that complex fields have directly measured negative intensity.
+- **No point markers or absolute coordinate labels.** Overlapping wave packet textures occupy the canvas; tapping places a prepared packet without showing a fictitious exact physical position measurement.
+- **Stochastic / expected toggle:** for scattering, choose random events weighted by calculated process cross section or show integrated encounter expectations with no scattering outcome. Measured-lifetime decays remain stochastic.
+- **Events:** logged observed reactions, rejected thresholds and explicitly unresolved outgoing channels.
 
-Masses are approximate PDG values in MeV. Current quark masses have renormalization-scale/scheme dependence and must not be used as universal nonperturbative constituent masses. For all channels in this version, masses are fixed external parameters; running couplings and finite-width propagators are not evaluated.
+## Species
 
-## Computed physics: rigorous in a specified model
+**46 reference entries**, including:
+- All three charged leptons and antiparticles, neutrinos and antineutrinos.
+- All six quark flavors and anti-flavors, plus **all eight gluon adjoint basis states**.
+- Photon, W±, Z, Higgs scalar.
+- Effective pion / kaon, proton / neutron and corresponding anti-hadrons.
 
-Internal units: `E [MeV]`, `p [MeV/c]`, `x [fm]`, `t [fm/c]`, `ℏc = 197.3269804 MeV fm`; `c = 1` in kinematic formulas.
+**Quark and gluon fields are selectable as *localized, confined color-source textures***, **not free on-shell particles**. There is no gauge-invariant single gluon observability. An isolated quark or gluon cannot initiate a physical asymptotic scattering channel. The underlying color state is not evolved with SU(3) lattice gauge theory.
 
-### On-shell relativistic propagation
+**Nucleons are visualized by constituent content:** `p≈uud + gluon cloud`, `n≈udd + gluon cloud`; antiparticles use conjugate content. The valence positions and gluon texture are **qualitative schematic markers**, not an actual computed proton/neutron bound-state wavefunction or a solved parton distribution. Nucleons remain on-shell *composite hadron* states for beta-decay kinematics.
+
+Neutrinos are massless ultra-relativistic approximations by flavor, not massive mixing eigenstates. Quark masses are scale/scheme-dependent in PDG listings; confined source textures must not be interpreted using free current-quark masses as constituent dynamics.
+
+## Automatic decays: physical time, not animation time
+
+For unstable species with available lifetimes from Particle Data Group:
 
 ```text
-E = sqrt(p_x² + p_y² + m²)
-v_x/c = p_x / E,     v_y/c = p_y / E
-K = E - m           (massive species)
-E = K               (massless species, requiring E > 0)
-r(t+dt) = r(t) + (p/E) dt
+proper waiting time u = - τ ln(U), U ~ Uniform(0,1)
+lab waiting time Δt = γ u, γ = E/m
 ```
 
-Within **free propagation**, exact relativistic energy and group velocity are used. No Coulomb force is integrated here. There is intentionally no fake general electrostatic force law applied to photons, quarks, unstable bosons or ultrarelativistic neutrinos. Scattering only happens in listed channels.
+All time is internal `fm/c` (light travels 1 fm in 1 natural unit). The engine evolves at physically scaled time, and the **⏭ next decay** action advances to the actual sampled future event, potentially corresponding to microseconds for muons or hundreds of seconds for neutrons. It does not falsify particle lifetime for visibility.
 
-### Reaction kinematics
+At each decay, a random channel is selected from approximate PDG branching fractions for **supported** channels. The missing branching fraction is **not** renormalized to 100% over implemented channels. If an unimplemented physical channel wins, the parent is removed from the observed sector and the initial four-momentum is kept in an **explicit unresolved-final-state accounting ledger**. In particular **H→bb̄** normally hadronizes; two free b quarks cannot be used as an observable final state, so this channel remains unresolved and honestly reported. Do not claim energy magically vanished or that outgoing gluon/quark jets have been accurately simulated.
 
-Each listed process is an explicitly **conditioned channel**. Its initial and final states must match exact particle IDs. The engine checks:
-- Conserved total electric charge, baryon number and each charged-lepton-family number, assuming no flavor mixing.
-- Total invariant energy `sqrt(s)` and final-state rest-mass threshold.
-- Exact on-shell two-body outgoing momenta in the incoming center-of-momentum frame.
-- Lorentz boost back to the laboratory frame with total **four-momentum conservation**.
-- Three-body final states by two successive two-body decays with a sampled intermediate invariant mass. This is a valid kinematic phase-space point, **not** a sampled weak V−A matrix element or exact differential decay spectrum.
+Implemented 2- and 3-body kinematic channels include Z→ℓℓ, Z→νν, W±→ℓ±ν, H→γγ (rare), π→μν, π⁰→γγ, K→μν, μ→eνν, τ→μνν and neutron beta decay. **This is still not complete decay physics**: W/Z/H/τ/kaon other channels and realistic decay angular/spin correlations remain unimplemented.
 
-The outgoing azimuthal angle is uniformly sampled in the **2D demonstration plane** and does not reproduce measured 3D angular distributions. Sampled channel outcome is *not* weighted by a physical matrix element. Pair annihilation and Compton elastic channels therefore exhibit physically **allowed** four-momentum arrangements but not predictive event rates. No spontaneous decay lifetime simulation is enabled, so macroscopic muon/neutron lifetimes do not get silently accelerated into fictitious femtometer-scale lifetimes.
+## Automatic scattering: selected first-principles cross sections plus a stated beam model
 
-For `γγ → e⁻e⁺`, two colliding photons need enough invariant mass to create the pair. Same-direction photons have `s=0`, even when both are individually energetic. Both situations have explicit blocked presets.
+The following cross sections (in `fm²`) are available:
 
-**32 registered processes** (including one correctly unavailable hadronizing Higgs channel) cover QED annihilation/scattering, high-energy lepton pair production, Compton, Z/W/H, pion/kaon/muon/tau and neutron beta-decay illustrations. Nothing not listed is assumed to take place automatically.
-
-### Visualized packet amplitudes
-
-For every incoming particle, a **2D paraxial scalar single-particle packet** is drawn. Its centroid is propagated by the relativistic group velocity. The carrier obeys the on-shell dispersion `ω=E/ℏ`. The Gaussian longitudinal and transverse widths are obtained from the Hessian of `E(p)=sqrt(m²+|p|²)` around each packet's central momentum:
+1. **Breit–Wheeler** `γγ→ℓ⁺ℓ⁻` for e, μ, τ, exact unpolarized **lowest-order total QED** expression for real photons:
 
 ```text
-d²E/dp_parallel² = m² / E³
-d²E/dp_perpendicular² = 1/E
+β = sqrt(1 - 4m²/s),  r_l = α ℏc/m
 
-σ_parallel(t) = σ₀ sqrt(1 + [ℏc t m²/(2 σ₀² E³)]²)
-σ_perp(t)     = σ₀ sqrt(1 + [ℏc t/(2 σ₀² E)]²)
+σ_BW(s) = (πr_l²/2)(1-β²)
+          [ (3-β⁴) ln((1+β)/(1-β)) - 2β(2-β²) ]
+σ_BW(s)=0 if s≤4m².
 ```
 
-This **paraxial approximation is reliable only when the momentum spread is small compared to a scale over which the dispersion curvature changes.** It is NOT a solution to the Dirac equation, Maxwell equations, Proca equations, interacting Klein–Gordon field, quantum chromodynamics or a true many-body Fock-space evolution. The displayed real signed amplitude should not be identified with a measurement of the quantum field operator; e.g. `⟨1|φ̂|1⟩=0` for ordinary number states. The visualization is a wavepacket projection, not an interacting vacuum expectation value.
+2. **Klein–Nishina total** for `γe→γe` (and positron variant), using photon energy in the electron rest frame; below `ε ≲ 10⁻³`, the controlled Thomson expansion avoids cancellation.
+3. **LO QED photon-exchange** `e⁺e⁻→μ⁺μ⁻,τ⁺τ⁻`, with the electron mass neglected in the matrix element, excluding electroweak Z resonances and corrections.
+4. **High-energy leading-log** `e⁺e⁻→γγ` for `s>100m_e²`; otherwise automatically unavailable, rather than assigning an invented rate.
+5. All other registered interactions (e.g. Møller, Bhabha without a physical angular acceptance and complete matrix elements) are cataloged for kinematics but **not automatically claimed to have a known probabilistic rate**.
 
-Packets from different species are **drawn with additive color blending**, not summed as mutually coherent scalar quantum wavefunctions. Carrier oscillations with wavelengths smaller than the screen resolution are **suppressed** rather than aliased into false interference patterns. Phase/time at very high energies can also be undersampled visually.
-
-### Absent physics (explicit)
-
-- Interacting QFT: Feynman amplitudes, perturbative matrix elements, loop corrections and running couplings.
-- Real differential/total cross sections, selection/branching probabilities, physical sampling of 3D scattering angles.
-- Spin, helicity/chirality, fermionic antisymmetrization, genuine many-body entanglement and quantum measurement.
-- Real-space QCD gluon fields, color confinement dynamics, jets and hadronization.
-- Decay lifetime sampling, radiative corrections and particle-width/virtual/off-shell propagation.
-- Oscillating neutrino mass eigenstates with PMNS; exact neutrino rest masses.
-- Electromagnetic radiation fields, renormalization, gauge fixing and finite spacetime-grid solvers.
-
-For experimental predictions or particle-detector simulation, real HEP software should be integrated as a separately validated backend (e.g. **MadGraph5_aMC@NLO** for matrix elements, **Pythia8** for shower/hadronization, **Geant4** for detector transport, and **ROOT/HepMC** for event data). Such a backend has **not** been integrated here.
-
-## Model validation
-
-Run `npm test`. Tests validate:
-- Complete fundamental-sector registry and particle/antiparticle charges/colors.
-- Prohibition of free colored particles.
-- On-shell relativistic dispersion and massless speed.
-- Threshold/parallel-photon prohibitions.
-- All supported experiments' electric-charge and baryon/lepton-number constraints.
-- Four-momentum conservation in every allowed preset, including three-body decays and boosted Compton scattering.
-- Explicit auto-collision condition, no spontaneous unlisted reactions, and finite packet amplitude.
-
-Older 2D Newton/Coulomb/dot-based code was removed from the current branch, but is preserved in Git history.
-
-## Sources
-
-- [Particle Data Group 2025, Review of Particle Physics](https://pdg.lbl.gov/2025/)
-- [PDG 2025 particle mass/decay listings](https://pdg.lbl.gov/2025/listings/particle_properties.html)
-- [PDG 2025 Standard Model and QCD reviews](https://pdg.lbl.gov/2025/reviews/standard_model_and_related.html)
-- [NIST fundamental constants](https://physics.nist.gov/cuu/Constants/)
-
-## Current modules
+The single-particle spatial packet density is modeled by a **normalized 3D Gaussian**, with fixed width `σ_p` at the interaction stage. We observe a 2D slice and explicitly assume the hidden z-offset is zero. The reaction hazard per unit laboratory natural time is modeled as:
 
 ```text
-index.html                Minimal full-width laboratory
-src/field.css             Responsive styling
-src/catalog.js            Particle states, conjugation, confinement, PDG-based masses
-src/field-physics.js      Natural-unit propagation and on-shell reaction kinematics
-src/field-renderer.js     Layered complex-amplitude proxy field visualization
-src/field-app.js          Presets, interaction controls, UI lifecycle
-src/presets.js            29 physically scoped and explanatory experiments
-tests/field.test.mjs      Catalog, threshold, conservation and simulation regression tests
-.github/workflows/ci.yml Automated syntax and physics tests
+g_3D(r) = exp(-|r|²/(4σ_p²)) / (4πσ_p²)^(3/2)
+λ_channel(t) = σ_channel(s) × v_Møller × g_3D(r(t))
+P_event over Δt = 1 - exp( - Δt Σ_channels λ_channel )
 ```
+
+Competing rates are sampled in proportion to their hazard. Numerical substeps integrate this exposure throughout a near encounter. A reaction is **not guaranteed** simply because two drawn waves overlap. Real collider luminosity requires actual three-dimensional beam preparation; these rates are predictive **only within this specified single-packet overlap model** and *not exact experimental probabilities*.
+
+The **1000 independent trials** action samples the analytically integrated Gaussian crossing hazard across separate identically prepared crossings, without artificially raising the physics rate; one successful representative event may be displayed. Outcomes vary between runs.
+
+### Final-state kinematics
+
+For supported reactions, mass shell, charge, approximate flavor lepton and baryon number and **relativistic four-momentum** are enforced. Two-body outcomes are generated in the center of mass and Lorentz-boosted into the 2D lab plane. Three-body decays use sequential two-body phase-space generation. **Azimuthal scatter directions are sampled uniformly in 2D**, *not* from exact 3D quantum angular differential cross sections or helicity amplitudes. This is a known limitation despite correct four-momentum conservation.
+
+There is no free-field photon emission during continuous propagation, no real-time dynamic gluon field, no QCD hadronization, no complete nonperturbative QFT and no actual detector transport.
+
+## Visualization math
+
+The colored scalar carrier is an approximate relativistic single-particle Gaussian wave-packet projection. Spatial centroid velocity is `v/c=p/E`, and the longitudinal/transverse packet broadening uses the curvature of `E(p)=sqrt(m²+|p|²)`. A full Dirac/Maxwell/Proca/Yang–Mills quantum-field equation is **not** integrated; spin, gauge fixing, interference between identical fermions, exchange statistics, entanglement, and QFT loop diagrams are absent. Under-resolved carrier oscillations are suppressed instead of being rendered as incorrect interference fringes.
+
+Field colors refer to rendering channels, not directly observable complex field operator eigenvalues. Conjugate colors are a visualization convention, not a Standard Model law.
+
+## Experiments
+
+**29 basic presets:** leptons, photons, energetic pair production, Compton/Breit–Wheeler, π/W/Z/H/μ/τ/n decay and explicit forbidden threshold experiments.
+
+**18 separate, independently analytical historical and quantum-device experiments** in the **İleri** menu, with adjustable parameters and a plotted expected response:
+
+| Topic | Experiment | Physics actually computed |
+| --- | --- | --- |
+| Interference | Young double slit | Fraunhofer sinc² × cos² fringe profile + Born detector sample |
+| Historical | Einstein photoelectric effect | Kmax=max(0,hν−φ) |
+| Spin | Stern–Gerlach | cos²(θ/2) single-spin measurement probability |
+| Electron matter waves | Davisson–Germer | de Broglie wavelength and elementary Bragg condition |
+| Coulomb scattering | Rutherford | sin⁻⁴(θ/2) angular differential shape with finite-angle cut |
+| Interference | Mach–Zehnder | cos²(φ/2) output probability |
+| Interferometry | Michelson | ideal monochromatic phase fringe |
+| Foundations | Bell–CHSH singlet | ideal quantum correlation E(a,b)=−V cos(a−b), max 2√2V |
+| Quantum mechanics | Square barrier tunneling | stationary 1D exact transmission coefficient |
+| Superconducting devices | DC SQUID | 2Ic|cos(πΦ/Φ0)| ideal critical-current envelope |
+| Superconducting devices | AC Josephson | f = 2eV/h; **1 μV→0.48359785 MHz** |
+| Two-level quantum | Rabi oscillations | driven two-level transition probability |
+| Atomic clocks | Ramsey interferometry | ideal phase-dependent fringe |
+| Quantum optics | Hong–Ou–Mandel | two-photon indistinguishability coincidence dip |
+| Quantum information | BB84 | intercept-resend QBER=f/4 |
+| Condensed matter | Integer quantum Hall | Gxy=νe²/h |
+| Spectroscopy | Zeeman splitting | μ_B B characteristic splitting scale |
+| Foundations | Aharonov–Bohm | Δφ=2πΦ/(h/e) ideal loop phase |
+
+These analytical device experiments **are not implicitly running inside the interacting Standard Model collision engine**. Their exact/idealized equations are in `src/experiments.js` and their stated idealizations appear inside the app.
+
+## Project structure
+
+```text
+index.html                 One-screen, scroll-free grid
+src/laboratory.css         Responsive controls and expandable panels
+src/laboratory.js          Unified UI, experiments, expected/stochastic modes
+src/catalog.js             Standard Model inventory / conjugation / hadron references
+src/field-physics.js       On-shell propagation and energy-momentum conservation
+src/auto-events.js         PDG lifetimes, branching and QED scattering hazards
+src/field-renderer.js      Composited textures, nucleon valence + gluon cloud, plots
+src/presets.js             29 basic particle-process scenarios
+src/experiments.js         18 analytical historic/quantum devices
+tests/field.test.mjs       Baseline mass-shell/conservation tests
+tests/auto-events.test.mjs Extended lifetime/rate/experiment tests
+.github/workflows/ci.yml  GitHub Actions validation
+```
+
+## Sources and cautions
+
+- [Particle Data Group 2025 particle data](https://pdg.lbl.gov/2025/listings/particle_properties.html).
+- [2025 PDG summary tables](https://pdg.lbl.gov/2025/tables/contents_tables.html).
+- [Breit–Wheeler original two-photon cross-section review](https://www.sciencedirect.com/science/article/abs/pii/S0370157309002518).
+- [NIST: Klein–Nishina total cross section](https://srd.nist.gov/NSRDS/NSRDS-NBS29.pdf).
+- [NIST CODATA fundamental constants](https://physics.nist.gov/cuu/Constants/).
+
+For genuine precision event generation and detector simulation, integrate validated external HEP engines and data standards (MadGraph5_aMC@NLO / Pythia8 / Geant4 / HepMC / ROOT). This repo does not claim those capabilities.
+
+**License:** Not yet selected.
