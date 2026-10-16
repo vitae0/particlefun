@@ -117,11 +117,11 @@ export function eligibleChannels(particles) {
 }
 export class FieldLab {
   constructor(random=Math.random){
-    this.random=random;this.fields=[];this.events=[];this.clock=0;this.id=1;
+    this.random=random;this.fields=[];this.sources=[];this.events=[];this.clock=0;this.id=1;
     this.widthFm=26;this.channel=null;this.autoCollision=false;this.packetSigma=2.1;
     this.completed=new Set();this.lastReaction=null;
   }
-  reset(){this.fields=[];this.events=[];this.clock=0;this.id=1;this.completed.clear();this.lastReaction=null;this.channel=null;this.autoCollision=false}
+  reset(){this.fields=[];this.sources=[];this.events=[];this.clock=0;this.id=1;this.completed.clear();this.lastReaction=null;this.channel=null;this.autoCollision=false}
   add(type,kineticMeV=4,angleDeg=0,x=0,y=0){
     const s=SPECIES[type];if(!s)throw new Error('Bilinmeyen tür.');
     if(s.confined)throw new Error(s.name+': renk hapsi nedeniyle serbest durum olarak eklenemez. Hadron deneylerini kullan.');
@@ -132,6 +132,15 @@ export class FieldLab {
     const E=s.mass+kinetic,pp=Math.sqrt(kinetic*(2*s.mass+kinetic)),angle=a*Math.PI/180;
     const p={id:this.id++,type,x:X,y:Y,px:pp*Math.cos(angle),py:pp*Math.sin(angle),phase:0,birth:this.clock};
     this.fields.push(p);return p;
+  }
+  // Confined quark/gluon gauge-sector field SOURCE, not an on-shell free particle.
+  addSource(type,x=0,y=0) {
+    const s=SPECIES[type];
+    if(!s?.confined)throw new Error('Yalnızca renkli alan kaynakları.');
+    if(this.sources.length>=24)throw new Error('Alan kaynağı sınırı.');
+    const source={id:'s'+this.id++,type,x:Number(x),y:Number(y),sourceOnly:true};
+    if(!Number.isFinite(source.x)||!Number.isFinite(source.y))throw new Error('Geçersiz konum.');
+    this.sources.push(source);return source;
   }
   fromFour(type,v,x,y){
     const s=SPECIES[type];if(!s||s.confined)throw new Error('Serbest son durum oluşturulamaz.');
