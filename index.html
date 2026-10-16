@@ -1,61 +1,66 @@
 <!doctype html>
-<html lang="tr"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080b10"><meta name="description" content="ParticleFun · Standart Model alan laboratuvarı ve korunumluluk kontrollü etkileşim deneyleri">
-<title>ParticleFun | Field Laboratory</title><link rel="stylesheet" href="./src/field.css">
-<script type="module" src="./src/field-app.js"></script>
-</head><body>
-<div class="laboratory">
-  <header class="header"><div class="identity"><span class="symbol">✳</span><b>particlefun</b><span class="quiet">/ field laboratory</span></div>
-  <a class="repository" href="https://github.com/vitae0/particlefun" target="_blank" rel="noopener">github ↗</a></header>
-  <main>
-    <div class="intro">
-      <div><p class="overline">QUANTUM FIELD · APPROXIMATE MODEL</p><h1>Fields, not dots.</h1><p>Alan paketlerini üst üste gör. İzinli çarpışmaları ve bozunmaları incele.</p></div>
-      <div class="state" id="state" aria-live="polite">● çalışıyor</div>
-    </div>
-    <div class="workbench">
-      <form id="addForm" class="add-bar">
-        <label class="form-cell species-cell">Parçacık / alan
-          <select id="species" aria-label="Parçacık türü"></select></label>
-        <label class="form-cell energy-cell"><span id="energyLabel">Kinetik enerji · MeV</span>
-          <input id="kinetic" type="number" step="any" min="0" max="100000000" value="8" required></label>
-        <label class="form-cell angle-cell">Yön · °
-          <input id="angle" type="number" step="15" value="0" required></label>
-        <button id="add" class="add-button" type="submit" title="Tuvalin solundan alan paketi ekle">＋ Ekle</button>
-      </form>
-      <div class="canvas-box">
-        <canvas id="canvas" aria-label="Üst üste binen kuantum alanı tek-parçacık genlikleri" role="img"></canvas>
-        <div class="canvas-top"><span id="experimentTitle">Elektron-pozitron alanı</span><span id="time">t = 0 fm/c</span></div>
-        <div class="canvas-foot"><span>2D · relativistic on-shell kinematics</span><span id="eventBadge">0 olay</span></div>
-      </div>
-      <div class="playbar">
-        <label class="preset-label">Deney <select id="preset" aria-label="Deney seç"></select></label>
-        <button type="button" class="icon-button" id="play" title="Oynat / duraklat" aria-label="Duraklat">Ⅱ</button>
-        <button type="button" class="icon-button" id="step" title="1 fm/c ilerle">↦</button>
-        <button type="button" class="icon-button" id="reset" title="Deneyi yeniden başlat">↻</button>
-        <button type="button" class="icon-button" id="clear" title="Her şeyi temizle">×</button>
-        <span class="flexspace"></span>
-        <label class="zoom-label">Ölçek <select id="zoom" aria-label="Fiziksel görünüm genişliği"><option value="16">16 fm</option><option value="26" selected>26 fm</option><option value="52">52 fm</option><option value="104">104 fm</option></select></label>
-      </div>
-    </div>
-    <div id="message" class="info" role="status" aria-live="polite"></div>
-    <section class="lower">
-      <div class="lower-head"><h2>Aktif alanlar <span id="count">0</span></h2><span class="legend-note">Antiparçacıklar tamamlayıcı renklerle.</span></div>
-      <div id="fields" class="field-chips"></div>
-      <div class="reaction-row">
-        <label class="channel-label">Etkileşim <select id="channel" aria-label="Olay kanalı"><option value="">Uygun kanal yok</option></select></label>
-        <button id="trigger" type="button" class="action-button">İşlemi uygula ↗</button>
-      </div>
-      <div class="event-line"><strong>Son olay</strong><p id="eventLog">Henüz etkileşim gerçekleşmedi.</p></div>
-    </section>
-    <details class="deep"><summary>Model, bütün parçacıklar ve deney sınırları <span>↗</span></summary>
-      <div class="deep-grid"><section><h3>Neler gerçekten hesaplanıyor?</h3>
-      <p>On-shell relativistik E² = p² + m² (c = 1), Lorentz boost, 2→2 ve 1→2/3 son-durum kinematiği, enerji-eşik kontrolü ve korunumluluk denetimi. Alan görüntüsü, paraxial Gauss paketlerinin işaretli skaler genliğinin renkli izdüşümüdür.</p></section>
-      <section><h3>Neler hesaplanmıyor?</h3><p>Gerçek çok-parçacıklı QFT dalga fonksiyonları, Dirac/Maxwell/Proca alanlarının tam evrimi, spin, QCD bağlanması, QED döngüleri, gerçek diferansiyel tesir kesitleri, bozunma dallanma oranları, nötrino osilasyonu ve üç boyutta saçılma açılarının fiziksel dağılımı. Kanallar koşullandırılmıştır; gerçek olay olasılığı hesaplanmaz.</p></section>
-      <section><h3>Kritik ayrımlar</h3><p>Kuark ve gluonlar katalogda bulunur ancak renk hapsi nedeniyle tek başına yerleştirilemez. Foton/nötrino sıfır enerjiyle başlatılamaz. Antiparçacık için renk çevrilmesi grafiksel tercihtir, fiziksel bir negatif yük yoğunluğu iddiası değildir. Kütlesiz nötrino ve tek-parçacık alan gösterimi de yaklaşımdır.</p></section></div>
-      <p class="deep-links"><a href="https://pdg.lbl.gov/2025/" target="_blank" rel="noopener">PDG 2025 ↗</a> · <a href="https://github.com/vitae0/particlefun/blob/main/README.md" target="_blank" rel="noopener">Denklemler ve kaynak kodu ↗</a></p>
-    </details>
-  </main>
-  <footer>ParticleFun · standard model inventory / conditional processes / explicit approximations</footer>
-</div>
-</body></html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070b12"><meta name="description" content="ParticleFun · gerçek kinematik, ölçülmüş parçacık ömürleri ve analitik kuantum deneyleri">
+<title>ParticleFun | Laboratory</title>
+<link rel="stylesheet" href="./src/laboratory.css">
+<script type="module" src="./src/laboratory.js"></script>
+</head>
+<body><div class="app">
+<header class="top">
+  <div class="logo"><span aria-hidden="true">✳</span><strong>particlefun</strong><small>FIELD LAB</small></div>
+  <nav class="menus" aria-label="Laboratuvar menüleri">
+   <button type="button" data-panel="species" aria-expanded="false">＋ <span>Alan</span></button>
+   <button type="button" data-panel="basic" aria-expanded="false">◇ <span>Deneyler</span></button>
+   <button type="button" data-panel="advanced" aria-expanded="false">⊞ <span>İleri</span></button>
+   <button type="button" data-panel="events" aria-expanded="false">◷ <span>Olaylar</span></button>
+   <button type="button" data-panel="info" aria-expanded="false">ⓘ <span>Model</span></button>
+  </nav>
+  <div class="running" id="running">● LIVE</div>
+</header>
+<main class="stage">
+ <canvas id="canvas" role="img" aria-label="Standart Model alan paketleri veya seçili analitik kuantum deneyini gösteren tam ekran laboratuvar"></canvas>
+ <div class="stage-title"><span id="sceneGroup">PARÇACIK ALANLARI / QFT YAKLAŞIMI</span><h1 id="sceneName">Kuantum alan laboratuvarı</h1><p id="sceneText">Alan paketleri tek bir kesitte üst üste gösterilir.</p></div>
+ <div class="stage-right"><span id="clock">t = 0 fm/c</span><span id="modelBadge">ON-SHELL / APPROX.</span></div>
+ <div class="visual-legend" id="legend"></div>
+ <div id="panel" class="drawer" hidden aria-label="Açılır laboratuvar menüsü">
+  <div class="drawer-head"><div><span id="panelEyebrow">MENÜ</span><h2 id="panelTitle">Alanlar</h2></div><button id="closePanel" type="button" aria-label="Menüyü kapat">×</button></div>
+  <div id="panelBody" class="drawer-body"></div>
+  <div class="drawer-footer"><button id="pagePrev" type="button">← Önceki</button><span id="pageStatus">1 / 1</span><button id="pageNext" type="button">Sonraki →</button></div>
+ </div>
+ <div id="advancedDock" class="advanced-dock" hidden>
+   <div class="dock-head"><span id="parameterName">Parametre</span><output id="parameterOut"></output></div>
+   <input id="parameter" type="range">
+   <div class="dock-bottom"><span id="analyticResult">Analitik sonuç</span><button type="button" id="measure" title="Born kuralıyla tek ölçüm yap">Ölçüm al ↗</button></div>
+ </div>
+ <div id="notice" class="notice" role="status" aria-live="polite">Model sınırları menüsünden hangi denklemlerin kullanıldığını inceleyebilirsiniz.</div>
+</main>
+<footer class="controls">
+ <div class="transport" role="group" aria-label="Zaman kontrolleri">
+  <button type="button" id="slower" title="Yavaşlat" aria-label="Yavaşlat">−</button>
+  <button type="button" id="play" title="Başlat / durdur" aria-label="Duraklat">Ⅱ</button>
+  <button type="button" id="faster" title="Hızlandır" aria-label="Hızlandır">＋</button>
+  <span id="speed" class="speed">1×</span>
+  <button type="button" id="step" title="Bir fizik adımı ilerle">↦ <span>Adım</span></button>
+  <button type="button" id="jump" title="Ölçülmüş ömre göre örneklenmiş sonraki bozunmaya atla">⏭ <span>Son bozunma</span></button>
+  <button type="button" id="restart" title="Düzeneği sıfırla">↻</button>
+ </div>
+ <div class="selectors">
+  <label>Ölçek <select id="scale" aria-label="Görünüm ölçeği">
+   <option value="1">1 fm</option><option value="5">5 fm</option>
+   <option value="26" selected>26 fm</option><option value="100">100 fm</option>
+   <option value="1000">1.000 fm</option><option value="1000000">1 nm</option>
+   <option value="1000000000">1 μm</option><option value="1000000000000">1 mm</option>
+   <option value="1000000000000000">1 m</option><option value="1000000000000000000">1 km</option>
+  </select></label>
+  <label>Hassasiyet <select id="precision" aria-label="Simülasyon hassasiyeti">
+    <option value="fast">Hızlı</option><option value="balanced" selected>Dengeli</option><option value="precise">Yüksek</option>
+  </select></label>
+  <label>Renk <select id="colors" aria-label="Renk haritalama">
+    <option value="linear">Lineer</option><option value="log" selected>Logaritmik</option><option value="exp">Üstel</option>
+  </select></label>
+  <button type="button" id="mode" title="Örneklemeli / beklenen olasılık">🎲 <span>Stokastik</span></button>
+ </div>
+</footer>
+</div></body></html>
