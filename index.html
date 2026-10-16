@@ -1,66 +1,44 @@
 <!doctype html>
-<html lang="tr">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#070b12"><meta name="description" content="ParticleFun · gerçek kinematik, ölçülmüş parçacık ömürleri ve analitik kuantum deneyleri">
-<title>ParticleFun | Laboratory</title>
-<link rel="stylesheet" href="./src/laboratory.css">
-<script type="module" src="./src/laboratory.js"></script>
-</head>
-<body><div class="app">
-<header class="top">
-  <div class="logo"><span aria-hidden="true">✳</span><strong>particlefun</strong><small>FIELD LAB</small></div>
-  <nav class="menus" aria-label="Laboratuvar menüleri">
-   <button type="button" data-panel="species" aria-expanded="false">＋ <span>Alan</span></button>
-   <button type="button" data-panel="basic" aria-expanded="false">◇ <span>Deneyler</span></button>
-   <button type="button" data-panel="advanced" aria-expanded="false">⊞ <span>İleri</span></button>
-   <button type="button" data-panel="events" aria-expanded="false">◷ <span>Olaylar</span></button>
-   <button type="button" data-panel="info" aria-expanded="false">ⓘ <span>Model</span></button>
-  </nav>
-  <div class="running" id="running">● LIVE</div>
-</header>
-<main class="stage">
- <canvas id="canvas" role="img" aria-label="Standart Model alan paketleri veya seçili analitik kuantum deneyini gösteren tam ekran laboratuvar"></canvas>
- <div class="stage-title"><span id="sceneGroup">PARÇACIK ALANLARI / QFT YAKLAŞIMI</span><h1 id="sceneName">Kuantum alan laboratuvarı</h1><p id="sceneText">Alan paketleri tek bir kesitte üst üste gösterilir.</p></div>
- <div class="stage-right"><span id="clock">t = 0 fm/c</span><span id="modelBadge">ON-SHELL / APPROX.</span></div>
- <div class="visual-legend" id="legend"></div>
- <div id="panel" class="drawer" hidden aria-label="Açılır laboratuvar menüsü">
-  <div class="drawer-head"><div><span id="panelEyebrow">MENÜ</span><h2 id="panelTitle">Alanlar</h2></div><button id="closePanel" type="button" aria-label="Menüyü kapat">×</button></div>
-  <div id="panelBody" class="drawer-body"></div>
-  <div class="drawer-footer"><button id="pagePrev" type="button">← Önceki</button><span id="pageStatus">1 / 1</span><button id="pageNext" type="button">Sonraki →</button></div>
- </div>
- <div id="advancedDock" class="advanced-dock" hidden>
-   <div class="dock-head"><span id="parameterName">Parametre</span><output id="parameterOut"></output></div>
-   <input id="parameter" type="range">
-   <div class="dock-bottom"><span id="analyticResult">Analitik sonuç</span><button type="button" id="measure" title="Born kuralıyla tek ölçüm yap">Ölçüm al ↗</button></div>
- </div>
- <div id="notice" class="notice" role="status" aria-live="polite">Model sınırları menüsünden hangi denklemlerin kullanıldığını inceleyebilirsiniz.</div>
-</main>
-<footer class="controls">
- <div class="transport" role="group" aria-label="Zaman kontrolleri">
-  <button type="button" id="slower" title="Yavaşlat" aria-label="Yavaşlat">−</button>
-  <button type="button" id="play" title="Başlat / durdur" aria-label="Duraklat">Ⅱ</button>
-  <button type="button" id="faster" title="Hızlandır" aria-label="Hızlandır">＋</button>
-  <span id="speed" class="speed">1×</span>
-  <button type="button" id="step" title="Bir fizik adımı ilerle">↦ <span>Adım</span></button>
-  <button type="button" id="jump" title="Ölçülmüş ömre göre örneklenmiş sonraki bozunmaya atla">⏭ <span>Son bozunma</span></button>
-  <button type="button" id="restart" title="Düzeneği sıfırla">↻</button>
- </div>
- <div class="selectors">
-  <label>Ölçek <select id="scale" aria-label="Görünüm ölçeği">
-   <option value="1">1 fm</option><option value="5">5 fm</option>
-   <option value="26" selected>26 fm</option><option value="100">100 fm</option>
-   <option value="1000">1.000 fm</option><option value="1000000">1 nm</option>
-   <option value="1000000000">1 μm</option><option value="1000000000000">1 mm</option>
-   <option value="1000000000000000">1 m</option><option value="1000000000000000000">1 km</option>
-  </select></label>
-  <label>Hassasiyet <select id="precision" aria-label="Simülasyon hassasiyeti">
-    <option value="fast">Hızlı</option><option value="balanced" selected>Dengeli</option><option value="precise">Yüksek</option>
-  </select></label>
-  <label>Renk <select id="colors" aria-label="Renk haritalama">
-    <option value="linear">Lineer</option><option value="log" selected>Logaritmik</option><option value="exp">Üstel</option>
-  </select></label>
-  <button type="button" id="mode" title="Örneklemeli / beklenen olasılık">🎲 <span>Stokastik</span></button>
- </div>
-</footer>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101317"><title>ParticleFun · Research Lab</title>
+<link rel="stylesheet" href="./src/research.css"><script type="module" src="./src/research.js"></script></head>
+<body>
+<div id="app">
+ <header id="tools" role="toolbar" aria-label="Laboratuvar">
+  <strong id="logo">particlefun</strong>
+  <button type="button" id="experiments">Deney ▾</button>
+  <button type="button" id="species">Alan ▾</button>
+  <label class="klabel" title="Başlangıç kinetik enerjisi, MeV. Kütlesiz alanlar için toplam enerji.">K <input type="number" id="kinetic" min="0" step="any" value="0"></label>
+  <button type="button" id="add" title="Görünüm merkezine alan ekle">＋</button>
+  <div class="sep"></div>
+  <button type="button" id="back" title="Önceki simülasyon karesine dön [←]" aria-label="Bir kare geri">⟵</button>
+  <button type="button" id="play" title="Başlat/durdur [Space]" aria-label="Başlat">▶</button>
+  <button type="button" id="forward" title="Bir kare ileri [→]" aria-label="Bir kare ileri">⟶</button>
+  <button type="button" id="slower" aria-label="Yavaşlat">−</button>
+  <output id="speed">1×</output>
+  <button type="button" id="faster" aria-label="Hızlandır">＋</button>
+  <button type="button" id="restart" title="Seçili deneyi başlangıca döndür">↺</button>
+  <button type="button" id="instrument" title="Serbest fotonu ilk aygıta fiziksel uçuş süresince ilerlet">⏭</button>
+  <div class="sep"></div>
+  <button type="button" id="view">Görünüm ▾</button>
+  <button type="button" id="help">?</button>
+ </header>
+ <main id="workspace">
+  <canvas id="plot" role="img" aria-label="Üç boyutlu fiziğin ayarlanabilir z kesitini, yörüngeleri ve deney aygıtlarını gösteren çizim"></canvas>
+  <div id="sceneLabel">LAB</div>
+  <div id="message" role="status" aria-live="polite"></div>
+  <section id="popup" hidden aria-label="Açılır menü">
+   <div class="popuphead"><strong id="popupTitle">Deneyler</strong><button type="button" id="popupClose" aria-label="Kapat">×</button></div>
+   <div id="popupItems"></div>
+   <div class="popupfoot"><button type="button" id="previous">‹</button><output id="page">1 / 1</output><button type="button" id="next">›</button></div>
+  </section>
+ </main>
+ <footer id="status">
+  <span id="simtime">t = 0 fm/c</span>
+  <label id="zlabel">z = <output id="zvalue">0</output> fm
+    <input id="slice" type="range" min="-52.5" max="52.5" step="any" value="0" aria-label="3B modelin z kesitini değiştir">
+  </label>
+  <span id="diagnostic">3D Lorentz + Coulomb · z kesiti</span>
+  <span id="hint">Sürükle: pan · tekerlek: zoom · Space: ▶/Ⅱ</span>
+ </footer>
 </div></body></html>
