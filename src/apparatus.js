@@ -41,6 +41,11 @@ export class Apparatus {
     return this.advanceOilDrop();
   if(packets.length&&packets.every(p=>p.type==='silver')&&this.devices.some(d=>d.kind==='spinmagnet'))
     return this.advanceSpinBeamline();
+  if(packets.length&&packets.every(p=>['e','ae','mu','amu','p','ap','alpha'].includes(p.type))&&
+     this.devices.some(d=>['plates','magnet','wien'].includes(d.kind))&&
+     this.devices.some(d=>d.kind==='screen')&&
+     packets.every(p=>Math.abs(p.x)>1e11))
+    return this.advanceLorentzBeamline();
   if(!packets.length||packets.some(p=>p.type!=='photon'))return null;
   const planes=this.devices.filter(d=>['screen','slits','photoelectric','interferometer'].includes(d.kind));
   let closest=null;
@@ -64,6 +69,79 @@ export class Apparatus {
   return {dt:closest.dt,device:closest.device,hits:this.hits};
  }
 
+
+ // High-accuracy 3D laboratory-beam tracking at cm and ns scales.
+ // Adaptive RK4 in SI seconds, with exact relativistic v=p*c/E and
+ // piecewise prescribed electric/magnetic apparatus fields. No pair
+ // Coulomb transport; only used when interparticle Coulomb is negligible.
+ advanceLorentzBeamline(){
+  const detector=this.devices.find(d=>d.kind==='screen');
+  if(!detector)return null;
+  const c=299792458,chargeUnit=299.792458; // (MeV/c)/s per V/m for q=e
+  let maxTime=0,integrated=0,allReached=true;
+  const before=this.lab.fields.map(p=>({id:p.id,x:p.x,y:p.y,z:p.z||0}));
+  for(const p of this.lab.fields){
+   const v0=p.px/energy(p)*c,dx=(detector.x-p.x)*1e-15;
+   if(!(dx/v0>0&&Number.isFinite(dx/v0)))return null;
+   maxTime=Math.max(maxTime,dx/v0);
+  }
+  // Demonstrate only where 3D pair Coulomb is <10^-3 of applied field.
+  if(this.lab.fields.length>1){
+   for(let i=0;i<this.lab.fields.length;i++)for(let j=i+1;j<this.lab.fields.length;j++){
+    const a=this.lab.fields[i],b=this.lab.fields[j];
+    const sep=Math.hypot(a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0));
+    if(sep<1e11)return null;
+   }
+  }
+  const rhs=(type,u)=>{
+    const E=Math.hypot(SPECIES[type].mass,u[3],u[4],u[5]);
+    const vel=[u[3]/E*c,u[4]/E*c,u[5]/E*c];
+    const at=this.fieldAt({x:u[0],y:u[1],z:u[2]});
+    const ex=at.E,bt=at.B,q=SPECIES[type].charge;
+    const cross=[
+      vel[1]*bt[2]-vel[2]*bt[1],
+      vel[2]*bt[0]-vel[0]*bt[2],
+      vel[0]*bt[1]-vel[1]*bt[0]
+    ];
+    return [...vel.map(x=>x*1e15),...cross.map((x,i)=>q*chargeUnit*(x+ex[i]))];
+  };
+  const advance=(type,u,h)=>{
+    const plus=(a,b,f)=>a.map((x,i)=>x+b[i]*f);
+    const k1=rhs(type,u),k2=rhs(type,plus(u,k1,h/2));
+    const k3=rhs(type,plus(u,k2,h/2)),k4=rhs(type,plus(u,k3,h));
+    return u.map((x,i)=>x+h*(k1[i]+2*k2[i]+2*k3[i]+k4[i])/6);
+  };
+  for(const p of this.lab.fields){
+    const charge=SPECIES[p.type].charge;
+    const startX=p.x,was=energy(p);
+    let u=[p.x,p.y,p.z||0,p.px,p.py,p.pz||0],t=0,steps=0;
+    const v=Math.max(1,Math.hypot(p.px,p.py,p.pz||0)/was*c);
+    const estimate=Math.abs((detector.x-p.x)*1e-15)/v;
+    const terminal=Math.max(estimate*12,1e-10);
+    const Bmax=this.devices.reduce((m,d)=>Math.max(m,Math.hypot(...(d.B||[0,0,0]))),0);
+    const omega=Math.abs(charge)*299.792458*c*Math.max(Bmax,1e-20)/Math.max(1,was*c);
+    // 1500 nominal time steps; reduce dt near strong magnetic precession.
+    const base=Math.min(estimate/1700,omega>0?.045/omega:estimate/1700);
+    while(steps++<18000&&t<terminal){
+      const beforeU=u,dt=Math.max(1e-17,Math.min(base,terminal-t));
+      const next=advance(p.type,u,dt);
+      u=next;t+=dt;
+      if((beforeU[0]-detector.x)*(next[0]-detector.x)<=0){
+       const frac=(detector.x-beforeU[0])/(next[0]-beforeU[0]||1);
+       u=beforeU.map((x,i)=>x+(next[i]-x)*frac);
+       t-=dt*(1-frac);break;
+      }
+    }
+    if((u[0]-detector.x)*(startX-detector.x)>0)allReached=false;
+    [p.x,p.y,p.z,p.px,p.py,p.pz]=u;
+    p.phase=((p.phase||0)-was*t*c*1e15/HC)%(2*Math.PI);
+    integrated=Math.max(integrated,t);
+  }
+  this.lab.clock+=integrated*c*1e15;
+  this.afterStep(before,integrated*c*1e15);
+  return {dt:integrated*c*1e15,device:detector,hits:this.hits,
+    approximation:allReached?'relativistic E/B RK4':'RK4: detector not reached'};
+ }
  // SI Stokes limit: m dv/dt = qE - mg - 6πηrv (low Reynolds number).
  // The analytical result advances measured physical time without discretizing
  // ~10²¹ fm/c into microscopic particle-collision time steps.
