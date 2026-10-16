@@ -8,7 +8,7 @@ export class ScientificRenderer {
   this.canvas=canvas;this.lab=lab;this.ctx=canvas.getContext('2d',{alpha:false});
   this.layer=document.createElement('canvas');this.layerCtx=this.layer.getContext('2d');
   this.camera={x:0,y:0,z:0,span:105};
-  this.quality='medium';this.color='log';this.vectors=true;this.trails=true;
+  this.quality='medium';this.color='log';this.display='potential';this.vectors=true;this.trails=true;
   this.width=1;this.height=1;this.last=0;this.dpr=1;
  }
  resize(){
@@ -67,49 +67,93 @@ export class ScientificRenderer {
  drawField(){
   const ctx=this.ctx,W=this.layer.width,H=this.layer.height,w=this.width,h=this.height;
   const img=this.layerCtx.createImageData(W,H),px=img.data;
-  for(let i=0;i<px.length;i+=4){px[i]=8;px[i+1]=13;px[i+2]=21;px[i+3]=255;}
   const span=this.camera.span,z=this.camera.z;
-  for(const o of this.constituents()){
-   const s=SPECIES[o.type];if(!s)continue;
-   const delta=Math.abs(o.z-z),base=o.sigma;
-   const part=o.part;
-   const age=part?Math.min(1e12,Math.max(0,this.lab.clock-part.birth)):0;
-   const E=part?energy(part):1,m=s.mass;
-   const spread=m>0&&E>0?HC*age*m*m/(2*base*base*E**3):0;
-   const wid=Math.min(1e20,base*Math.hypot(1,spread));
-   const pixStep=span/W;
-   const visual=Math.max(wid,pixStep*1.3);
-   const bound=Math.min(span*1.4,4*visual);
-   const za=Math.exp(-delta*delta/(4*wid*wid));
-   if(za<.003)continue;
-   const x0=Math.max(0,Math.floor((o.x-bound-this.camera.x)/span*W+W*.5));
-   const x1=Math.min(W-1,Math.ceil((o.x+bound-this.camera.x)/span*W+W*.5));
-   const y0=Math.max(0,Math.floor((.5+(this.camera.y-o.y-bound)/span*w/h)*H));
-   const y1=Math.min(H-1,Math.ceil((.5+(this.camera.y-o.y+bound)/span*w/h)*H));
-   if(x1<x0||y1<y0)continue;
-   const rgb=this.hue(s.colorHue),inverse=this.hue((s.colorHue+180)%360);
-   for(let j=y0;j<=y1;j++){
-    const y=this.camera.y+(.5-(j+.5)/H)*span*h/w;
-    for(let i=x0;i<=x1;i++){
-     const x=this.camera.x+((i+.5)/W-.5)*span;
-     const dr2=(x-o.x)**2+(y-o.y)**2;
-     const envelope=Math.exp(-dr2/(4*visual*visual))*za;
-     if(envelope<.004)continue;
-     let phase=1;
-     if(part&&!o.decor && wid>pixStep*1.5)phase=this.lab.fieldValue(part,x,y,z);
-     else if(o.decor)phase=Math.cos((x-o.x)*.7+(y-o.y)*.55);
-     const v=this.tone(envelope)*Math.min(1,Math.abs(phase))*(o.level||1)*.72;
-     const rgbNow=phase<0?inverse:rgb;
-     const n=(j*W+i)*4;
-     px[n]=Math.min(255,px[n]+rgbNow[0]*v);
-     px[n+1]=Math.min(255,px[n+1]+rgbNow[1]*v);
-     px[n+2]=Math.min(255,px[n+2]+rgbNow[2]*v);
+  for(let i=0;i<px.length;i+=4){px[i]=8;px[i+1]=13;px[i+2]=21;px[i+3]=255;}
+
+  // Default plot: an actual instantaneous, softened classical Coulomb
+  // potential of the 3D positions. Electron charge density is NOT a ring.
+  // This layer uses EXACTLY the same potential kernel as the force solver.
+  if(this.display==='potential'){
+    const charged=this.lab.fields.filter(p=>SPECIES[p.type].charge!==0);
+    if(charged.length){
+      const a=this.lab.transport?.softeningFm||.35;
+      const scale=HC/137.035999084/a;
+      for(let j=0;j<H;j++){
+        const yy=this.camera.y+(.5-(j+.5)/H)*span*h/w;
+        for(let i=0;i<W;i++){
+          const xx=this.camera.x+((i+.5)/W-.5)*span;
+          let V=0;
+          for(const p of charged){
+            const dx=xx-p.x,dy=yy-p.y,dz=z-(p.z||0);
+            V+=HC/137.035999084*SPECIES[p.type].charge/
+              Math.sqrt(dx*dx+dy*dy+dz*dz+a*a);
+          }
+          // Fixed color scaling tied to 1e charge at softening distance.
+          const intensity=this.tone(Math.min(1,Math.abs(V)/scale));
+          const rgb=V<0?[71,145,225]:[236,154,78];
+          const k=(j*W+i)*4,fac=.78*intensity;
+          px[k]=Math.min(255,px[k]+rgb[0]*fac);
+          px[k+1]=Math.min(255,px[k+1]+rgb[1]*fac);
+          px[k+2]=Math.min(255,px[k+2]+rgb[2]*fac);
+        }
+      }
     }
-   }
+  }
+
+  // Optional scalar diagnostic: narrow-band 3D packet |psi|² or Re psi,
+  // not a Dirac / interacting QFT solution.
+  for(const o of this.constituents()){
+    const sp=SPECIES[o.type];
+    if(!sp)continue;
+    if(this.display==='potential'&&o.part&&sp.charge!==0&&!o.decor)continue;
+    // Nucleon constituent sketch is not a resolved wavefunction.
+    const part=o.part;
+    const physical=part&&!o.decor;
+    const g=physical?this.lab.packetGeometry(part):null;
+    const wid=g?Math.max(g.sigmaL,g.sigmaT):o.sigma;
+    const xwidth=Math.max(wid,span/W*1.2);
+    const dz=z-o.z,atten=Math.exp(-dz*dz/(2*xwidth*xwidth));
+    if(atten<.003)continue;
+    const bound=Math.min(1.5*span,4*xwidth);
+    const x0=Math.max(0,Math.floor((o.x-bound-this.camera.x)/span*W+W*.5));
+    const x1=Math.min(W-1,Math.ceil((o.x+bound-this.camera.x)/span*W+W*.5));
+    const y0=Math.max(0,Math.floor((.5+(this.camera.y-o.y-bound)/span*w/h)*H));
+    const y1=Math.min(H-1,Math.ceil((.5+(this.camera.y-o.y+bound)/span*w/h)*H));
+    if(x1<x0||y1<y0)continue;
+    const rgb=this.hue(sp.colorHue),neg=this.hue((sp.colorHue+180)%360);
+    for(let j=y0;j<=y1;j++){
+      const yy=this.camera.y+(.5-(j+.5)/H)*span*h/w;
+      for(let i=x0;i<=x1;i++){
+        const xx=this.camera.x+((i+.5)/W-.5)*span;
+        let prob,amplitude;
+        if(physical){
+          prob=this.lab.packetDensity(part,xx,yy,z);
+          amplitude=this.display==='phase'?this.lab.fieldValue(part,xx,yy,z):Math.sqrt(prob);
+        }else{
+          const dr2=(xx-o.x)**2+(yy-o.y)**2+dz**2;
+          prob=Math.exp(-dr2/(2*xwidth*xwidth));
+          amplitude=prob>0?Math.sqrt(prob)*Math.cos((xx-o.x)*.7+(yy-o.y)*.55):0;
+        }
+        // Default never colors the arbitrary carrier phase of a stationary
+        // electron as a physical 'ring'. A phase plot requires user opt-in.
+        const visual=this.display==='phase'?Math.abs(amplitude):prob;
+        const fac=this.tone(visual)*(o.level||1)*.65;
+        if(fac<.002)continue;
+        const color=this.display==='phase'&&amplitude<0?neg:rgb;
+        const k=(j*W+i)*4;
+        px[k]=Math.min(255,px[k]+color[0]*fac);
+        px[k+1]=Math.min(255,px[k+1]+color[1]*fac);
+        px[k+2]=Math.min(255,px[k+2]+color[2]*fac);
+      }
+    }
   }
   this.layerCtx.putImageData(img,0,0);
   ctx.globalCompositeOperation='screen';ctx.imageSmoothingEnabled=true;
   ctx.drawImage(this.layer,0,0,w,h);ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#a4bacd';ctx.font='11px ui-monospace,monospace';
+  ctx.fillText(this.display==='potential'?'Coulomb V/e (classical)':
+    this.display==='density'?'|ψ|² (Gaussian approximation)':'Re ψ (phase diagnostic)',
+    9,this.height-24);
  }
  drawAxes(){
   const c=this.ctx,span=this.camera.span,unit=span>=1e15?['m',1e15]:span>=1e6?['nm',1e6]:['fm',1];
