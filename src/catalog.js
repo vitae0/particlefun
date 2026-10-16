@@ -49,6 +49,20 @@ pair('n','an','neutron','antineutron','hadron',939.56542052,0,
 item('pi0','π⁰','hadron',134.9768,0,{spin:0,lifetime:8.43e-17*C*1e15,selfConjugate:true});
 pair('pip','pim','π⁺','π⁻','hadron',139.57039,1,{spin:0,lifetime:2.6033e-8*C*1e15});
 pair('Kp','Km','K⁺','K⁻','hadron',493.677,1,{spin:0,lifetime:1.238e-8*C*1e15});
+// Species-specific hues; charge conjugation is EXACTLY a 180° rotation.
+for(const [id,hue] of [
+ ['e',200],['mu',223],['tau',247],
+ ['ve',150],['vm',168],['vt',186],
+ ['u',22],['d',43],['s',64],['c',83],['b',103],['t',122],
+ ['p',17],['n',46],['pip',76],['Kp',100]
+]){
+  const x=catalog[id];if(!x)continue;
+  x.colorHue=hue;
+  if(x.antiId && catalog[x.antiId])catalog[x.antiId].colorHue=(hue+180)%360;
+}
+catalog.photon.colorHue=274;
+catalog.Z.colorHue=299;
+catalog.H.colorHue=54;
 export const SPECIES = Object.freeze(catalog);
 export const GROUPS = Object.freeze([
  ['lepton','Yüklü leptonlar'],['neutrino','Nötrinolar'],
